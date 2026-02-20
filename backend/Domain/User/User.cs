@@ -1,8 +1,9 @@
-using System;
-using System.Collections.Generic;
-using CarRental.Core.Enums;
+using CarClass = Domain.Car.Car;
+using BookingClass = Domain.Booking.Booking;
+using Domain.Car;
+using Domain.Booking;
 
-namespace CarRental.Core.Models
+namespace Domain.User
 {
     public class User
     {
@@ -22,9 +23,9 @@ namespace CarRental.Core.Models
 
         // Relationships
         public virtual UserVerification? Verification { get; set; }
-        public virtual ICollection<Car> OwnedCars { get; set; } = new List<Car>();
-        public virtual ICollection<Booking> RenterBookings { get; set; } = new List<Booking>();
-        public virtual ICollection<Booking> OwnerBookings { get; set; } = new List<Booking>();
+        public virtual ICollection<CarClass> OwnedCars { get; set; } = new List<CarClass>();
+        public virtual ICollection<BookingClass> RenterBookings { get; set; } = new List<BookingClass>();
+        public virtual ICollection<BookingClass> OwnerBookings { get; set; } = new List<BookingClass>();
         public virtual ICollection<Review> GivenReviews { get; set; } = new List<Review>();
         public virtual ICollection<Review> ReceivedReviews { get; set; } = new List<Review>();
         public virtual ICollection<Message> SentMessages { get; set; } = new List<Message>();

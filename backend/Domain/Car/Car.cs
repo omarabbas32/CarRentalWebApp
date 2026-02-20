@@ -1,15 +1,12 @@
-using System;
-using System.Collections.Generic;
-using CarRental.Core.Enums;
-using NetTopologySuite.Geometries;
+using Domain.Booking;
 
-namespace CarRental.Core.Models
+namespace Domain.Car
 {
     public class Car
     {
         public Guid Id { get; set; }
         public Guid OwnerId { get; set; }
-        public virtual User Owner { get; set; } = null!;
+        public virtual Domain.User.User Owner { get; set; } = null!;
 
         // Basic Info
         public string Make { get; set; } = string.Empty;
@@ -64,31 +61,7 @@ namespace CarRental.Core.Models
 
         // Relationships
         public virtual ICollection<CarImage> Images { get; set; } = new List<CarImage>();
-        public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+        public virtual ICollection<Domain.Booking.Booking> Bookings { get; set; } = new List<Domain.Booking.Booking>();
         public virtual ICollection<CarAvailability> Availabilities { get; set; } = new List<CarAvailability>();
-    }
-
-    public class CarImage
-    {
-        public Guid Id { get; set; }
-        public Guid CarId { get; set; }
-        public virtual Car Car { get; set; } = null!;
-
-        public string ImageUrl { get; set; } = string.Empty;
-        public int DisplayOrder { get; set; }
-        public bool IsPrimary { get; set; }
-        public CarImageType ImageType { get; set; }
-    }
-
-    public class CarAvailability
-    {
-        public Guid Id { get; set; }
-        public Guid CarId { get; set; }
-        public virtual Car Car { get; set; } = null!;
-
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public bool IsAvailable { get; set; }
-        public string? Reason { get; set; }
     }
 }
