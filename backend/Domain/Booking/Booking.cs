@@ -1,21 +1,18 @@
-using System;
-using System.Collections.Generic;
-using CarRental.Core.Enums;
-using NetTopologySuite.Geometries;
+using Domain.Car;
 
-namespace CarRental.Core.Models
+namespace Domain.Booking
 {
     public class Booking
     {
         public Guid Id { get; set; }
         public Guid CarId { get; set; }
-        public virtual Car Car { get; set; } = null!;
+        public virtual Domain.Car.Car Car { get; set; } = null!;
 
         public Guid RenterId { get; set; }
-        public virtual User Renter { get; set; } = null!;
+        public virtual Domain.User.User Renter { get; set; } = null!;
 
         public Guid OwnerId { get; set; }
-        public virtual User Owner { get; set; } = null!;
+        public virtual Domain.User.User Owner { get; set; } = null!;
 
         // Dates
         public DateTime StartDate { get; set; }
@@ -58,42 +55,5 @@ namespace CarRental.Core.Models
         public virtual TripInspection? PickupInspection { get; set; }
         public virtual TripInspection? ReturnInspection { get; set; }
         public virtual Review? Review { get; set; }
-    }
-
-    public class TripInspection
-    {
-        public Guid Id { get; set; }
-        public Guid BookingId { get; set; }
-        public virtual Booking Booking { get; set; } = null!;
-
-        public InspectionType Type { get; set; }
-        public Guid InspectedByUserId { get; set; }
-        public DateTime InspectionDateTime { get; set; }
-        public Point? InspectionLocation { get; set; }
-
-        // Condition
-        public int FuelLevel { get; set; } // 0-100
-        public int Cleanliness { get; set; } // 1-5
-        public string? GeneralConditionNotes { get; set; }
-
-        // Damage
-        public bool HasDamage { get; set; }
-        public string? DamageDescription { get; set; }
-
-        // Signatures
-        public string? RenterSignatureUrl { get; set; }
-        public string? OwnerSignatureUrl { get; set; }
-
-        public virtual ICollection<InspectionPhoto> Photos { get; set; } = new List<InspectionPhoto>();
-    }
-
-    public class InspectionPhoto
-    {
-        public Guid Id { get; set; }
-        public Guid TripInspectionId { get; set; }
-        public virtual TripInspection TripInspection { get; set; } = null!;
-
-        public string PhotoUrl { get; set; } = string.Empty;
-        public string? Description { get; set; }
     }
 }
