@@ -33,6 +33,16 @@ namespace Infrastructure.Data.Configurations
             builder.Property(b => b.TotalAmount).HasPrecision(18, 2);
             builder.Property(b => b.ExtraMileageCharge).HasPrecision(18, 2);
             builder.Property(b => b.RefundAmount).HasPrecision(18, 2);
+
+            builder.HasOne(b => b.PickupInspection)
+                .WithOne()
+                .HasForeignKey<Booking>("PickupInspectionId")
+                .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(b => b.ReturnInspection)
+                .WithOne()
+                .HasForeignKey<Booking>("ReturnInspectionId")
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

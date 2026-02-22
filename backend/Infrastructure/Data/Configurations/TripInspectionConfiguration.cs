@@ -14,6 +14,8 @@ namespace Infrastructure.Data.Configurations
                 .WithMany()
                 .HasForeignKey(ti => ti.BookingId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.OwnsOne(ti => ti.InspectionLocation);
         }
     }
 }

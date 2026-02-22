@@ -23,8 +23,7 @@ public class DeleteCarCommandHandler : IRequestHandler<DeleteCarCommand>
             throw new Exception($"Car with ID {request.Id} not found.");
         }
 
-        // We can either perform a hard delete or a soft delete.
-        // For now, let's just remove it.
+        
         _context.Cars.Remove(car);
         await _context.SaveChangesAsync(cancellationToken);
     }
