@@ -20,6 +20,8 @@ namespace Infrastructure.Data.Configurations
             builder.Property(c => c.PricePerMonth).HasPrecision(18, 2);
             builder.Property(c => c.SecurityDeposit).HasPrecision(18, 2);
             builder.Property(c => c.ExtraMileageCharge).HasPrecision(18, 2);
+
+            builder.OwnsOne(c => c.Location);
         }
     }
 }
