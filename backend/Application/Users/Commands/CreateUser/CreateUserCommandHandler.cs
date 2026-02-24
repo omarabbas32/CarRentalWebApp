@@ -7,10 +7,12 @@ namespace Application.Users.Commands.CreateUser;
 public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>
 {
     private readonly IAppDbContext _context;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public CreateUserCommandHandler(IAppDbContext context)
+    public CreateUserCommandHandler(IAppDbContext context, IPasswordHasher passwordHasher)
     {
         _context = context;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<Guid> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -19,6 +21,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>
         {
             Id = Guid.NewGuid(),
             Email = request.Email,
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
             PhoneNumber = request.PhoneNumber,
             FirstName = request.FirstName,
             LastName = request.LastName,

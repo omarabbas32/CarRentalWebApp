@@ -13,8 +13,39 @@ namespace API.Controllers;
 public class CarsController : BaseApiController
 {
     [HttpPost]
-    public async Task<IActionResult> CreateCar([FromBody] CreateCarCommand command)
+    public async Task<IActionResult> CreateCar([FromBody] CreateCarRequest request)
     {
+        var command = new CreateCarCommand(
+            request.OwnerId,
+            request.Make,
+            request.Model,
+            request.Year,
+            request.Color,
+            request.LicensePlate,
+            request.VIN,
+            request.Transmission,
+            request.FuelType,
+            request.Seats,
+            request.Doors,
+            request.Mileage,
+            request.Category,
+            request.HasGPS,
+            request.HasBluetooth,
+            request.HasUSBCharging,
+            request.HasChildSeat,
+            request.HasAirConditioning,
+            request.HasBackupCamera,
+            request.Location,
+            request.LocationAddress,
+            request.LocationCity,
+            request.LocationState,
+            request.PricePerDay,
+            request.PricePerWeek,
+            request.PricePerMonth,
+            request.SecurityDeposit,
+            request.DailyMileageLimit,
+            request.ExtraMileageCharge);
+            
         var carId = await Mediator.Send(command);
         return CreatedAtAction(nameof(GetCarById), new { id = carId }, carId);
     }
@@ -32,13 +63,41 @@ public class CarsController : BaseApiController
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateCar(Guid id, [FromBody] UpdateCarCommand command)
+    public async Task<IActionResult> UpdateCar(Guid id, [FromBody] UpdateCarRequest request)
     {
-        if (id != command.Id)
-        {
-            return BadRequest("ID mismatch.");
-        }
-
+        var command = new UpdateCarCommand(
+            id,
+            request.Make,
+            request.Model,
+            request.Year,
+            request.Color,
+            request.LicensePlate,
+            request.VIN,
+            request.Transmission,
+            request.FuelType,
+            request.Seats,
+            request.Doors,
+            request.Mileage,
+            request.Category,
+            request.HasGPS,
+            request.HasBluetooth,
+            request.HasUSBCharging,
+            request.HasChildSeat,
+            request.HasAirConditioning,
+            request.HasBackupCamera,
+            request.Location,
+            request.LocationAddress,
+            request.LocationCity,
+            request.LocationState,
+            request.PricePerDay,
+            request.PricePerWeek,
+            request.PricePerMonth,
+            request.SecurityDeposit,
+            request.DailyMileageLimit,
+            request.ExtraMileageCharge,
+            request.IsAvailable,
+            request.IsActive);
+            
         await Mediator.Send(command);
         return NoContent();
     }

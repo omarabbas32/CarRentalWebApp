@@ -12,8 +12,16 @@ namespace API.Controllers;
 public class UsersController : BaseApiController
 {
     [HttpPost]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
+        var command = new CreateUserCommand(
+            request.Email,
+            request.Password,
+            request.PhoneNumber,
+            request.FirstName,
+            request.LastName,
+            request.Role);
+            
         var userId = await Mediator.Send(command);
         return Ok(userId);
     }
@@ -25,9 +33,15 @@ public class UsersController : BaseApiController
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserCommand command)
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
     {
-        if (id != command.Id) return BadRequest("ID mismatch.");
+        var command = new UpdateUserCommand(
+            id,
+            request.Email,
+            request.PhoneNumber,
+            request.FirstName,
+            request.LastName);
+            
         await Mediator.Send(command);
         return NoContent();
     }

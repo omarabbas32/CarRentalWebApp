@@ -1,13 +1,8 @@
 using BCrypt.Net;
+using Application.Common.Interfaces;
 
 namespace Infrastructure.Identity
 {
-    public interface IPasswordHasher
-    {
-        string HashPassword(string password);
-        bool VerifyPassword(string password, string hashedPassword);
-    }
-
     public class PasswordHasher : IPasswordHasher
     {
         public string HashPassword(string password)

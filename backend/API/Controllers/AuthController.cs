@@ -1,3 +1,4 @@
+using API.Requests.Auth;
 using Application.Auth.Commands.Login;
 using Application.Auth.Commands.Logout;
 using Application.Auth.Commands.RefreshToken;
@@ -21,29 +22,43 @@ namespace API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterCommand command)
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
+            var command = new RegisterCommand(
+                request.Email,
+                request.Password,
+                request.FirstName,
+                request.LastName,
+                request.Role);
+                
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginCommand command)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
+            var command = new LoginCommand(request.Email, request.Password);
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenCommand command)
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
         {
+            var command = new RefreshTokenCommand(
+                request.Token,
+                request.RefreshToken,
+                request.IpAddress);
+                
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromBody] LogoutCommand command)
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
+            var command = new LogoutCommand(request.RefreshToken, request.IpAddress);
             await _mediator.Send(command);
             return NoContent();
         }
