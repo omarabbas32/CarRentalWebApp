@@ -10,6 +10,8 @@ namespace Domain.User
         public Guid Id { get; set; }
         public string Email { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
         public UserRole Role { get; set; }
         public UserStatus Status { get; set; }
         
@@ -17,12 +19,14 @@ namespace Domain.User
         public bool PhoneVerified { get; set; }
         public bool IdentityVerified { get; set; }
         public bool DriverLicenseVerified { get; set; }
+        public string PasswordHash { get; set; } = string.Empty;
         
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
         // Relationships
         public virtual UserVerification? Verification { get; set; }
+        public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
         public virtual ICollection<CarClass> OwnedCars { get; set; } = new List<CarClass>();
         public virtual ICollection<BookingClass> RenterBookings { get; set; } = new List<BookingClass>();
         public virtual ICollection<BookingClass> OwnerBookings { get; set; } = new List<BookingClass>();

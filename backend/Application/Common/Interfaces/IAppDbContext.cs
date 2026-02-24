@@ -15,6 +15,7 @@ public interface IAppDbContext
     DbSet<InspectionPhoto> InspectionPhotos { get; }
     DbSet<User> Users { get; }
     DbSet<UserVerification> UserVerifications { get; }
+    DbSet<RefreshToken> RefreshTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

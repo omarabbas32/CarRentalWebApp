@@ -20,6 +20,8 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>
             Id = Guid.NewGuid(),
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
             Role = request.Role,
             Status = UserStatus.Active,
             CreatedAt = DateTime.UtcNow

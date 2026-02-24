@@ -28,4 +28,11 @@ namespace Domain.User
         NationalId,
         DriversLicense
     }
+
+    public enum VerificationDocumentType
+    {
+        GovernmentId,
+        DriverLicenseFront,
+        DriverLicenseBack
+    }
 }

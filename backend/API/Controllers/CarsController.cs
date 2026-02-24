@@ -3,6 +3,9 @@ using Application.Cars.Commands.DeleteCar;
 using Application.Cars.Commands.UpdateCar;
 using Application.Cars.Queries.GetCarById;
 using Application.Cars.Queries.GetCars;
+using Application.Cars.Commands.UploadCarImage;
+using Domain.Car;
+using API.Requests.Cars;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -44,6 +47,21 @@ public class CarsController : BaseApiController
     public async Task<IActionResult> DeleteCar(Guid id)
     {
         await Mediator.Send(new DeleteCarCommand(id));
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/images")]
+    public async Task<IActionResult> UploadImage(Guid id, [FromForm] CarImageUploadRequest request)
+    {
+        var command = new UploadCarImageCommand(id, request.File, request.Type, request.IsPrimary);
+        var imageId = await Mediator.Send(command);
+        return Ok(imageId);
+    }
+
+    [HttpDelete("images/{imageId:guid}")]
+    public async Task<IActionResult> DeleteImage(Guid imageId)
+    {
+        await Mediator.Send(new Application.Cars.Commands.DeleteCarImage.DeleteCarImageCommand(imageId));
         return NoContent();
     }
 }

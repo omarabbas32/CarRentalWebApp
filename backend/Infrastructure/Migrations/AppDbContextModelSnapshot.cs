@@ -513,6 +513,45 @@ namespace Infrastructure.Migrations
                     b.ToTable("Notification");
                 });
 
+            modelBuilder.Entity("Domain.User.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedByIp")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Expires")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReplacedByToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("Revoked")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("Domain.User.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -532,8 +571,20 @@ namespace Infrastructure.Migrations
                     b.Property<bool>("EmailVerified")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("IdentityVerified")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
@@ -800,6 +851,17 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("UserId");
                 });
 
+            modelBuilder.Entity("Domain.User.RefreshToken", b =>
+                {
+                    b.HasOne("Domain.User.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.User.UserVerification", b =>
                 {
                     b.HasOne("Domain.User.User", "User")
@@ -847,6 +909,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("ReceivedMessages");
 
                     b.Navigation("ReceivedReviews");
+
+                    b.Navigation("RefreshTokens");
 
                     b.Navigation("RenterBookings");
 
