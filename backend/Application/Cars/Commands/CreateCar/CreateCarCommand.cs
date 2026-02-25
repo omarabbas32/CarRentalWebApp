@@ -1,9 +1,11 @@
+using Application.Common.Security;
 using MediatR;
 using Domain.Car;
 using Domain.Booking;
 
 namespace Application.Cars.Commands.CreateCar;
 
+[Authorize(Roles = "Owner,Admin,Staff")]
 public record CreateCarCommand(
     Guid OwnerId,
     string Make,

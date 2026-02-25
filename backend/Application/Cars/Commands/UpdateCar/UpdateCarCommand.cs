@@ -1,9 +1,11 @@
+using Application.Common.Security;
 using MediatR;
 using Domain.Car;
 using Domain.Booking;
 
 namespace Application.Cars.Commands.UpdateCar;
 
+[Authorize(Roles = "Owner,Admin,Staff")]
 public record UpdateCarCommand(
     Guid Id,
     string Make,
