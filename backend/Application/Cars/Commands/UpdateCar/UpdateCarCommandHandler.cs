@@ -1,16 +1,20 @@
 using MediatR;
 using Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Application.Common.Exceptions;
+using Domain.User;
 
 namespace Application.Cars.Commands.UpdateCar;
 
 public class UpdateCarCommandHandler : IRequestHandler<UpdateCarCommand>
 {
     private readonly IAppDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UpdateCarCommandHandler(IAppDbContext context)
+    public UpdateCarCommandHandler(IAppDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task Handle(UpdateCarCommand request, CancellationToken cancellationToken)
@@ -21,6 +25,17 @@ public class UpdateCarCommandHandler : IRequestHandler<UpdateCarCommand>
         if (car == null)
         {
             throw new Exception($"Car with ID {request.Id} not found.");
+        }
+
+        var currentUserRole = _currentUserService.Role;
+        var currentUserId = _currentUserService.UserId;
+
+        if (currentUserRole != UserRole.Admin.ToString() && currentUserRole != UserRole.Staff.ToString())
+        {
+            if (car.OwnerId.ToString() != currentUserId)
+            {
+                throw new ForbiddenAccessException();
+            }
         }
 
         car.Make = request.Make;

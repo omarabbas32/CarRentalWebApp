@@ -4,7 +4,8 @@ namespace Domain.User
     {
         Renter,
         Owner,
-        Admin
+        Admin,
+        Staff
     }
 
     public enum UserStatus

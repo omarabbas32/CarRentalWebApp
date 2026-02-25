@@ -98,7 +98,16 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Application.AssemblyReference.Assembly));
 builder.Services.AddValidatorsFromAssembly(Application.AssemblyReference.Assembly);
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Application.Behaviors.AuthorizationBehavior<,>));
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+// Policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Cars.Manage", policy => policy.RequireRole("Admin", "Owner", "Staff"));
+    options.AddPolicy("Bookings.Manage", policy => policy.RequireRole("Admin", "Staff"));
+    options.AddPolicy("Users.Manage", policy => policy.RequireRole("Admin"));
+});
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
@@ -122,4 +131,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
