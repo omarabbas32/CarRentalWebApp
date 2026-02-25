@@ -2,7 +2,9 @@ using Application.Users.Commands.CreateUser;
 using Application.Users.Commands.UpdateUser;
 using Application.Users.Commands.DeleteUser;
 using Application.Users.Commands.UploadVerificationDocument;
+using Application.Users.Commands.ProcessVerification;
 using Application.Users.Queries.GetUserById;
+using Application.Users.Queries.GetPendingVerifications;
 using Domain.User;
 using API.Requests.Users;
 using Microsoft.AspNetCore.Mvc;
@@ -59,5 +61,19 @@ public class UsersController : BaseApiController
         var command = new UploadVerificationDocumentCommand(id, request.File, request.Type, request.IdType);
         var imageUrl = await Mediator.Send(command);
         return Ok(new { url = imageUrl });
+    }
+
+    [HttpGet("pending-verifications")]
+    public async Task<IActionResult> GetPendingVerifications()
+    {
+        return Ok(await Mediator.Send(new GetPendingVerificationsQuery()));
+    }
+
+    [HttpPost("{id:guid}/process-verification")]
+    public async Task<IActionResult> ProcessVerification(Guid id, [FromBody] ProcessVerificationRequest request)
+    {
+        var command = new ProcessVerificationCommand(id, request.DocumentType, request.Status, request.Reason);
+        await Mediator.Send(command);
+        return NoContent();
     }
 }
