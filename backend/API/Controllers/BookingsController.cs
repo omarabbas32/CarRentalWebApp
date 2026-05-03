@@ -2,6 +2,9 @@ using API.Requests.Bookings;
 using Application.Bookings.Commands.CreateBooking;
 using Application.Bookings.Commands.StartTrip;
 using Application.Bookings.Commands.EndTrip;
+using Application.Bookings.Commands.CancelBooking;
+using Application.Bookings.Queries.GetBookings;
+using Application.Bookings.Queries.GetBookingById;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -19,6 +22,39 @@ public class BookingsController : BaseApiController
             
         var bookingId = await Mediator.Send(command);
         return Ok(bookingId);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetBookings([FromQuery] SearchBookingsRequest request)
+    {
+        var query = new GetBookingsQuery(
+            request.RenterId,
+            request.OwnerId,
+            request.Status,
+            request.StartDate,
+            request.EndDate,
+            request.PageNumber,
+            request.PageSize);
+
+        return Ok(await Mediator.Send(query));
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetBookingById(Guid id)
+    {
+        return Ok(await Mediator.Send(new GetBookingByIdQuery(id)));
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    public async Task<IActionResult> CancelBooking(Guid id, [FromBody] CancelBookingRequest request)
+    {
+        var command = new CancelBookingCommand(
+            id,
+            request.CancelledByUserId,
+            request.CancellationReason);
+
+        await Mediator.Send(command);
+        return NoContent();
     }
 
     [HttpPost("{id:guid}/start")]
