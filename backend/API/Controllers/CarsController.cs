@@ -3,6 +3,7 @@ using Application.Cars.Commands.DeleteCar;
 using Application.Cars.Commands.UpdateCar;
 using Application.Cars.Queries.GetCarById;
 using Application.Cars.Queries.GetCars;
+using Application.Cars.Queries.SearchCars;
 using Application.Cars.Commands.UploadCarImage;
 using Domain.Car;
 using API.Requests.Cars;
@@ -48,6 +49,25 @@ public class CarsController : BaseApiController
             
         var carId = await Mediator.Send(command);
         return CreatedAtAction(nameof(GetCarById), new { id = carId }, carId);
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchCars([FromQuery] SearchCarsRequest request)
+    {
+        var query = new SearchCarsQuery(
+            request.City,
+            request.State,
+            request.StartDate,
+            request.EndDate,
+            request.MinPrice,
+            request.MaxPrice,
+            request.Category,
+            request.Features,
+            request.MinRating,
+            request.PageNumber,
+            request.PageSize);
+
+        return Ok(await Mediator.Send(query));
     }
 
     [HttpGet]
