@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build (.NET 9)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore backend/CarRentalWebApp.sln
+
+      - name: Build
+        run: dotnet build backend/CarRentalWebApp.sln --configuration Release --no-restore
+
+      - name: Test
+        shell: bash
+        run: |
+          # Run tests only once a test project exists, so CI stays green until then.
+          projects=$(grep -rl --include='*.csproj' -E 'xunit|NUnit|MSTest' backend || true)
+          if [ -z "$projects" ]; then
+            echo "No test projects found — skipping."
+            exit 0
+          fi
+          dotnet test backend/CarRentalWebApp.sln --configuration Release --no-build --verbosity normal
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check appsettings.json for committed secrets
+        shell: bash
+        run: |
+          # appsettings.json is committed as a placeholder template. Real values
+          # belong in user-secrets, environment variables, or ignored files.
+          file=backend/API/appsettings.json
+          fail=0
+
+          check() {
+            if grep -qE "$1" "$file"; then
+              echo "::error file=$file::$2"
+              fail=1
+            fi
+          }
+
+          check '"Secret"[[:space:]]*:[[:space:]]*"..*"'    'JwtSettings:Secret must be empty in appsettings.json'
+          check '"ApiSecret"[[:space:]]*:[[:space:]]*"..*"' 'Cloudinary:ApiSecret must be empty in appsettings.json'
+          check '"ApiKey"[[:space:]]*:[[:space:]]*"..*"'    'Cloudinary:ApiKey must be empty in appsettings.json'
+          check 'Password=[^";]+'                           'Connection string password must be empty in appsettings.json'
+
+          if [ "$fail" -eq 1 ]; then
+            echo "Move these values into user-secrets or environment variables."
+            exit 1
+          fi
+          echo "No secrets found in $file."
