@@ -6,9 +6,6 @@ public class CreateCarCommandValidator : AbstractValidator<CreateCarCommand>
 {
     public CreateCarCommandValidator()
     {
-        RuleFor(v => v.OwnerId)
-            .NotEmpty().WithMessage("Owner ID is required.");
-
         RuleFor(v => v.Make)
             .NotEmpty().WithMessage("Make is required.")
             .MaximumLength(50).WithMessage("Make must not exceed 50 characters.");

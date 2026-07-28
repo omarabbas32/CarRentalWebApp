@@ -7,18 +7,22 @@ namespace Application.Cars.Commands.CreateCar;
 public class CreateCarCommandHandler : IRequestHandler<CreateCarCommand, Guid>
 {
     private readonly IAppDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public CreateCarCommandHandler(IAppDbContext context)
+    public CreateCarCommandHandler(IAppDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Guid> Handle(CreateCarCommand request, CancellationToken cancellationToken)
     {
+        var ownerId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
+
         var car = new Car
         {
             Id = Guid.NewGuid(),
-            OwnerId = request.OwnerId,
+            OwnerId = ownerId,
             Make = request.Make,
             Model = request.Model,
             Year = request.Year,

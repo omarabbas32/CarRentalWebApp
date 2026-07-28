@@ -42,8 +42,13 @@ public class ExceptionHandlingMiddleware
                 code = HttpStatusCode.NotFound;
                 result = JsonSerializer.Serialize(new { error = notFoundException.Message });
                 break;
+            case UnauthorizedAccessException:
+                code = HttpStatusCode.Unauthorized;
+                result = JsonSerializer.Serialize(new { error = "Authentication is required." });
+                break;
             case ForbiddenAccessException:
                 code = HttpStatusCode.Forbidden;
+                result = JsonSerializer.Serialize(new { error = "You do not have permission to perform this action." });
                 break;
             default:
                 _logger.LogError(exception, "An unhandled exception has occurred.");

@@ -7,7 +7,6 @@ namespace Application.Bookings.Commands.CreateBooking;
 [Authorize(Roles = "Renter,Admin,Staff")]
 public record CreateBookingCommand(
     Guid CarId,
-    Guid RenterId,
     DateTime StartDate,
     DateTime EndDate
 ) : IRequest<Guid>;

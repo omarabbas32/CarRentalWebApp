@@ -32,7 +32,7 @@ public class UpdateCarCommandHandler : IRequestHandler<UpdateCarCommand>
 
         if (currentUserRole != UserRole.Admin.ToString() && currentUserRole != UserRole.Staff.ToString())
         {
-            if (car.OwnerId.ToString() != currentUserId)
+            if (car.OwnerId != currentUserId)
             {
                 throw new ForbiddenAccessException();
             }

@@ -10,14 +10,18 @@ namespace Application.Bookings.Commands.CreateBooking;
 public class CreateBookingCommandHandler : IRequestHandler<CreateBookingCommand, Guid>
 {
     private readonly IAppDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public CreateBookingCommandHandler(IAppDbContext context)
+    public CreateBookingCommandHandler(IAppDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Guid> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
     {
+        var renterId = _currentUserService.UserId ?? throw new UnauthorizedAccessException();
+
         var car = await _context.Cars
             .FirstOrDefaultAsync(c => c.Id == request.CarId, cancellationToken);
 
@@ -48,7 +52,7 @@ public class CreateBookingCommandHandler : IRequestHandler<CreateBookingCommand,
         {
             Id = Guid.NewGuid(),
             CarId = request.CarId,
-            RenterId = request.RenterId,
+            RenterId = renterId,
             OwnerId = car.OwnerId,
             StartDate = request.StartDate,
             EndDate = request.EndDate,

@@ -16,7 +16,6 @@ public class BookingsController : BaseApiController
     {
         var command = new CreateBookingCommand(
             request.CarId,
-            request.RenterId,
             request.StartDate,
             request.EndDate);
             
@@ -50,7 +49,6 @@ public class BookingsController : BaseApiController
     {
         var command = new CancelBookingCommand(
             id,
-            request.CancelledByUserId,
             request.CancellationReason);
 
         await Mediator.Send(command);

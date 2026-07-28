@@ -17,7 +17,6 @@ public class CarsController : BaseApiController
     public async Task<IActionResult> CreateCar([FromBody] CreateCarRequest request)
     {
         var command = new CreateCarCommand(
-            request.OwnerId,
             request.Make,
             request.Model,
             request.Year,
