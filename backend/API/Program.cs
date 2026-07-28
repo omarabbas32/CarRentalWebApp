@@ -28,6 +28,21 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// CORS
+const string CorsPolicyName = "DefaultCors";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicyName, policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 // Swagger Configuration
 builder.Services.AddSwaggerGen(c =>
 {
@@ -114,6 +129,12 @@ builder.Services.AddScoped<IAppDbContext>(provider => provider.GetRequiredServic
 
 var app = builder.Build();
 
+if (allowedOrigins.Length == 0)
+{
+    app.Logger.LogWarning(
+        "No origins configured under Cors:AllowedOrigins - all cross-origin browser requests will be rejected.");
+}
+
 app.UseMiddleware<API.Middleware.ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -123,6 +144,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Must run before the rate limiter so preflight (OPTIONS) requests are answered
+// by the CORS middleware instead of consuming the "auth" limiter's 5/min budget.
+app.UseCors(CorsPolicyName);
 
 app.UseRateLimiter();
 app.UseAuthentication();
