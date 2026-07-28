@@ -12,11 +12,6 @@ x86/
 *.sln.docstates
 
 ## VS Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 
 ## Rider
 .idea/
@@ -26,6 +21,7 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+temp_auto_push.bat
 ## OS Files
 Thumbs.db
 Desktop.ini
@@ -50,3 +46,5 @@ dist/
 *.p12
 .env
 .env.*
+.gitignore
+branch_structure.json
