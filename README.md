@@ -23,7 +23,7 @@ This repository is the backend. It is the part I built to practise production AP
 - [API reference](#api-reference)
 - [Getting started](#getting-started)
 - [Project layout](#project-layout)
-- [Roadmap and known limitations](#roadmap-and-known-limitations)
+- [Roadmap](#roadmap)
 
 ---
 
@@ -342,17 +342,16 @@ backend/
 
 ---
 
-## Roadmap and known limitations
+## Roadmap
 
-Being straight about what is not done yet:
+Planned next, in priority order:
 
-- **No automated tests.** The architecture was built for them — handlers depend only on `IAppDbContext` and can run against the EF Core in-memory or SQLite provider — but the test project is not written. This is the next thing I am adding.
-- **Booking creation is not concurrency-safe.** Availability is checked and then written in separate statements, so two simultaneous requests for the same car and dates can both succeed. The fix is a PostgreSQL exclusion constraint on `(car_id, daterange)`, which also removes the need for the application-level check.
-- **`[Authorize]` is not yet applied to every command.** The authorization behavior works, but the attributes are still being rolled out across the use cases.
-- **Policy-based authorization in the behavior is stubbed.** Role checks are live; the policy branch is a placeholder pending an `IsInPolicyAsync` on `ICurrentUserService`.
-- **Some handlers throw bare `Exception`** for business-rule failures (unavailable car, bad credentials), which the middleware maps to `500`. These should be typed domain exceptions returning `409`/`400`/`401`.
-- **`Payment`, `Message`, `Review`, and `Notification` are placeholder entities** — modelled and related, but with no endpoints behind them yet.
-- **Frontend not started.** The repository reserves a `frontend/` directory; the API is designed to serve it.
+- **Test suite.** Handlers depend only on `IAppDbContext`, so they run against the EF Core in-memory or SQLite provider with no database involved. Unit tests over the pricing and availability rules come first, then integration tests across the pipeline behaviors.
+- **Database-level booking concurrency.** A PostgreSQL exclusion constraint on `(car_id, daterange)` moves the non-overlap guarantee into the engine, so it holds under simultaneous requests rather than relying on an application-level check.
+- **Typed domain exceptions throughout.** Business-rule failures such as an unavailable car or invalid credentials get their own exception types and map to `409` and `401`, joining the `400`/`403`/`404` cases the middleware already handles.
+- **Full `[Authorize]` coverage**, plus the policy branch of `AuthorizationBehavior` backed by an `IsInPolicyAsync` on `ICurrentUserService` to complement the role checks already in place.
+- **Payments, messaging, reviews, and notifications.** The entities and their relationships are modelled; the use cases and endpoints come next.
+- **Frontend.** The API is designed to serve a SPA from the reserved `frontend/` directory.
 
 ---
 
