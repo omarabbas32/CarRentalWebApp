@@ -1,0 +1,2013 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  h1,h2,h3,h4,p,ul,ol,figure{margin:0;}
+  ul,ol{padding:0;list-style:none;}
+  img,svg{display:block;max-width:100%;}
+  button,input,select,textarea{font:inherit;color:inherit;}
+</style>
+<title>CarRental — UI/UX Design</title>
+
+<style>
+/* ============================================================
+   PRESENTATION CHROME
+   ============================================================ */
+:root{
+  --c-bg:#E9EDEC; --c-panel:#FFFFFF; --c-panel-2:#F4F7F6;
+  --c-fg:#0B1211; --c-muted:#65736F; --c-faint:#8C9A96;
+  --c-line:#D8E0DE; --c-accent:#0F766E; --c-accent-soft:#DCEEEB; --c-accent-fg:#FFFFFF;
+  --c-shadow:0 1px 2px rgba(11,18,17,.05), 0 12px 32px -12px rgba(11,18,17,.18);
+
+  /* product tokens — light */
+  --p-bg:#FFFFFF; --p-surface:#FFFFFF; --p-subtle:#F4F7F6; --p-subtle-2:#EBF0EF;
+  --p-fg:#0B1211; --p-muted:#6B7674; --p-faint:#95A19E;
+  --p-line:#E3E8E7; --p-line-strong:#CBD5D3;
+  --p-primary:#0F766E; --p-primary-fg:#FFFFFF; --p-primary-soft:#E4F1EE; --p-primary-ink:#0B5850;
+  --p-star:#D97706;
+  --st-pend-fg:#8A4B04; --st-pend-bg:#FDF0DC;
+  --st-conf-fg:#0B5850; --st-conf-bg:#D9EFEB;
+  --st-prog-fg:#1A47B8; --st-prog-bg:#DEE8FD;
+  --st-done-fg:#54605D; --st-done-bg:#EDF1F0;
+  --st-canc-fg:#A3231F; --st-canc-bg:#FBE3E1;
+  --p-shadow:0 1px 2px rgba(11,18,17,.04), 0 8px 24px -12px rgba(11,18,17,.16);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --c-bg:#070B0A; --c-panel:#0F1514; --c-panel-2:#151D1B;
+    --c-fg:#E7EDEB; --c-muted:#8A9895; --c-faint:#6B7A76;
+    --c-line:#1F2A28; --c-accent:#2DD4BF; --c-accent-soft:#0F2B27; --c-accent-fg:#052421;
+    --c-shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 40px -16px rgba(0,0,0,.7);
+
+    --p-bg:#0B100F; --p-surface:#111817; --p-subtle:#161F1D; --p-subtle-2:#1B2523;
+    --p-fg:#E9EFEE; --p-muted:#8B9996; --p-faint:#6C7A77;
+    --p-line:#232F2D; --p-line-strong:#33413E;
+    --p-primary:#2DD4BF; --p-primary-fg:#052421; --p-primary-soft:#10312C; --p-primary-ink:#7FE7DA;
+    --p-star:#F0B429;
+    --st-pend-fg:#F0B429; --st-pend-bg:#33260A;
+    --st-conf-fg:#5EEAD4; --st-conf-bg:#0E332E;
+    --st-prog-fg:#93B4FF; --st-prog-bg:#132244;
+    --st-done-fg:#9AA7A4; --st-done-bg:#1D2726;
+    --st-canc-fg:#FCA5A1; --st-canc-bg:#3A1917;
+    --p-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="light"]{
+  --c-bg:#E9EDEC; --c-panel:#FFFFFF; --c-panel-2:#F4F7F6;
+  --c-fg:#0B1211; --c-muted:#65736F; --c-faint:#8C9A96;
+  --c-line:#D8E0DE; --c-accent:#0F766E; --c-accent-soft:#DCEEEB; --c-accent-fg:#FFFFFF;
+  --c-shadow:0 1px 2px rgba(11,18,17,.05), 0 12px 32px -12px rgba(11,18,17,.18);
+  --p-bg:#FFFFFF; --p-surface:#FFFFFF; --p-subtle:#F4F7F6; --p-subtle-2:#EBF0EF;
+  --p-fg:#0B1211; --p-muted:#6B7674; --p-faint:#95A19E;
+  --p-line:#E3E8E7; --p-line-strong:#CBD5D3;
+  --p-primary:#0F766E; --p-primary-fg:#FFFFFF; --p-primary-soft:#E4F1EE; --p-primary-ink:#0B5850;
+  --p-star:#D97706;
+  --st-pend-fg:#8A4B04; --st-pend-bg:#FDF0DC;
+  --st-conf-fg:#0B5850; --st-conf-bg:#D9EFEB;
+  --st-prog-fg:#1A47B8; --st-prog-bg:#DEE8FD;
+  --st-done-fg:#54605D; --st-done-bg:#EDF1F0;
+  --st-canc-fg:#A3231F; --st-canc-bg:#FBE3E1;
+  --p-shadow:0 1px 2px rgba(11,18,17,.04), 0 8px 24px -12px rgba(11,18,17,.16);
+}
+:root[data-theme="dark"]{
+  --c-bg:#070B0A; --c-panel:#0F1514; --c-panel-2:#151D1B;
+  --c-fg:#E7EDEB; --c-muted:#8A9895; --c-faint:#6B7A76;
+  --c-line:#1F2A28; --c-accent:#2DD4BF; --c-accent-soft:#0F2B27; --c-accent-fg:#052421;
+  --c-shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 40px -16px rgba(0,0,0,.7);
+  --p-bg:#0B100F; --p-surface:#111817; --p-subtle:#161F1D; --p-subtle-2:#1B2523;
+  --p-fg:#E9EFEE; --p-muted:#8B9996; --p-faint:#6C7A77;
+  --p-line:#232F2D; --p-line-strong:#33413E;
+  --p-primary:#2DD4BF; --p-primary-fg:#052421; --p-primary-soft:#10312C; --p-primary-ink:#7FE7DA;
+  --p-star:#F0B429;
+  --st-pend-fg:#F0B429; --st-pend-bg:#33260A;
+  --st-conf-fg:#5EEAD4; --st-conf-bg:#0E332E;
+  --st-prog-fg:#93B4FF; --st-prog-bg:#132244;
+  --st-done-fg:#9AA7A4; --st-done-bg:#1D2726;
+  --st-canc-fg:#FCA5A1; --st-canc-bg:#3A1917;
+  --p-shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -14px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--c-bg); color:var(--c-fg);
+  font-family:ui-sans-serif,system-ui,"Segoe UI Variable Text","Segoe UI",Roboto,sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:ui-monospace,"Cascadia Mono","Cascadia Code",Consolas,"SF Mono",monospace;}
+
+.shell{display:grid; grid-template-columns:268px minmax(0,1fr); min-height:100vh;}
+
+/* ---- rail ---- */
+.rail{
+  background:var(--c-panel); border-right:1px solid var(--c-line);
+  padding:22px 0 40px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  display:flex; flex-direction:column; gap:20px;
+}
+.brand{display:flex; align-items:center; gap:10px; padding:0 20px;}
+.brand__mark{
+  width:30px; height:30px; border-radius:9px; background:var(--c-accent);
+  display:grid; place-items:center; color:var(--c-accent-fg); flex:none;
+}
+.brand__name{font-weight:650; letter-spacing:-.01em; font-size:15px;}
+.brand__sub{font-size:11.5px; color:var(--c-faint); letter-spacing:.04em; text-transform:uppercase;}
+
+/* role switcher */
+.roles{display:flex; flex-wrap:wrap; gap:5px; padding:0 20px;}
+.role{
+  padding:5px 11px; border-radius:999px; border:1px solid var(--c-line); background:transparent;
+  color:var(--c-muted); font:inherit; font-size:12px; cursor:pointer; line-height:1.4;
+}
+.role:hover{color:var(--c-fg); border-color:var(--c-faint);}
+.role.is-on{background:var(--c-accent); border-color:var(--c-accent); color:var(--c-accent-fg); font-weight:600;}
+.role:focus-visible{outline:2px solid var(--c-accent); outline-offset:2px;}
+.role__n{opacity:.6; font-variant-numeric:tabular-nums; margin-left:3px;}
+
+/* swipe pager */
+.pager{
+  position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:60;
+  display:flex; align-items:center; gap:2px; background:var(--c-panel);
+  border:1px solid var(--c-line); border-radius:999px; padding:6px 8px; box-shadow:var(--c-shadow);
+}
+.pager__btn{
+  width:32px; height:32px; border-radius:50%; border:0; background:transparent; color:var(--c-muted);
+  cursor:pointer; display:grid; place-items:center; flex:none;
+}
+.pager__btn:hover:not([disabled]){background:var(--c-panel-2); color:var(--c-fg);}
+.pager__btn[disabled]{opacity:.28; cursor:not-allowed;}
+.pager__btn:focus-visible,.pager__dot:focus-visible{outline:2px solid var(--c-accent); outline-offset:2px;}
+.pager__label{
+  font-size:12px; color:var(--c-muted); padding:0 8px; white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.pager__label b{color:var(--c-fg); font-weight:600;}
+.pager__dots{display:flex; align-items:center; gap:5px; padding:0 6px;}
+.pager__dot{
+  width:6px; height:6px; border-radius:50%; background:var(--c-line); border:0; padding:0;
+  cursor:pointer; transition:width .18s ease, background .18s ease;
+}
+.pager__dot:hover{background:var(--c-faint);}
+.pager__dot.is-on{background:var(--c-accent); width:17px; border-radius:3px;}
+@media (prefers-reduced-motion: reduce){ .pager__dot{transition:none;} }
+.swipe-hint{
+  display:none; text-align:center; font-size:12px; color:var(--c-faint); margin-top:16px;
+}
+
+.nav-group{display:flex; flex-direction:column; gap:2px; padding:0 12px;}
+.nav-group__label{
+  font-size:10.5px; text-transform:uppercase; letter-spacing:.11em; font-weight:640;
+  color:var(--c-faint); padding:10px 8px 6px;
+}
+.nav-item{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  padding:7px 8px; border-radius:8px; border:0; background:transparent; cursor:pointer;
+  font:inherit; font-size:13.5px; color:var(--c-muted); line-height:1.35;
+}
+.nav-item:hover{background:var(--c-panel-2); color:var(--c-fg);}
+.nav-item.is-active{background:var(--c-accent-soft); color:var(--c-accent); font-weight:600;}
+.nav-item__num{
+  font-size:10.5px; width:20px; flex:none; text-align:right; color:var(--c-faint);
+  font-variant-numeric:tabular-nums;
+}
+.nav-item.is-active .nav-item__num{color:var(--c-accent);}
+.nav-item:focus-visible,.tbtn:focus-visible{outline:2px solid var(--c-accent); outline-offset:2px;}
+
+.rail__foot{margin-top:auto; padding:0 20px; display:flex; flex-direction:column; gap:10px;}
+.tbtn{
+  border:1px solid var(--c-line); background:transparent; color:var(--c-muted);
+  border-radius:8px; padding:7px 10px; font:inherit; font-size:12.5px; cursor:pointer;
+  display:flex; align-items:center; gap:8px; justify-content:center;
+}
+.tbtn:hover{color:var(--c-fg); border-color:var(--c-fg);}
+
+/* ---- stage ---- */
+.stage{padding:34px 40px 104px; min-width:0;}
+.stage__head{max-width:820px; margin-bottom:22px;}
+.eyebrow{
+  font-size:10.5px; text-transform:uppercase; letter-spacing:.12em; font-weight:640;
+  color:var(--c-accent); margin-bottom:8px;
+}
+.stage__title{
+  font-size:30px; line-height:1.15; letter-spacing:-.022em; font-weight:660; margin:0 0 8px;
+  text-wrap:balance;
+}
+.stage__desc{color:var(--c-muted); font-size:15px; margin:0; max-width:66ch;}
+.route{
+  display:inline-flex; align-items:center; gap:6px; margin-top:12px;
+  background:var(--c-panel); border:1px solid var(--c-line); border-radius:7px;
+  padding:4px 9px; font-size:12px; color:var(--c-muted);
+}
+.route b{color:var(--c-fg); font-weight:600;}
+
+/* browser frame */
+.frame{
+  background:var(--p-bg); border:1px solid var(--c-line); border-radius:14px;
+  box-shadow:var(--c-shadow); overflow:hidden; max-width:1240px;
+}
+.frame__bar{
+  display:flex; align-items:center; gap:12px; padding:9px 14px;
+  background:var(--c-panel-2); border-bottom:1px solid var(--c-line);
+}
+.dots{display:flex; gap:6px;}
+.dots i{width:9px; height:9px; border-radius:50%; background:var(--c-line);}
+.frame__url{
+  flex:1; background:var(--c-panel); border:1px solid var(--c-line); border-radius:6px;
+  padding:3px 10px; font-size:11.5px; color:var(--c-muted); max-width:460px;
+}
+.frame__url b{color:var(--c-fg); font-weight:600;}
+.frame__body{background:var(--p-bg); color:var(--p-fg); overflow-x:auto;}
+
+/* phone frame */
+.phones{display:flex; gap:26px; flex-wrap:wrap;}
+.phone{
+  width:300px; flex:none; border:1px solid var(--c-line); border-radius:26px;
+  background:var(--p-bg); color:var(--p-fg); overflow:hidden; box-shadow:var(--c-shadow);
+}
+.phone__notch{height:26px; display:grid; place-items:center; background:var(--p-bg);}
+.phone__notch i{width:64px; height:5px; border-radius:3px; background:var(--p-line-strong); display:block;}
+.phone__label{
+  margin-top:10px; font-size:12px; color:var(--c-muted); text-align:center;
+}
+
+/* annotation strip */
+.notes{
+  margin-top:22px; max-width:1240px; background:var(--c-panel); border:1px solid var(--c-line);
+  border-radius:12px; padding:18px 20px;
+}
+.notes__title{
+  font-size:10.5px; text-transform:uppercase; letter-spacing:.12em; font-weight:640;
+  color:var(--c-faint); margin-bottom:12px;
+}
+.notes ul{margin:0; padding:0; list-style:none; display:grid; gap:10px;}
+@media (min-width:1000px){ .notes ul{grid-template-columns:1fr 1fr; gap:10px 32px;} }
+.notes li{
+  display:grid; grid-template-columns:16px 1fr; gap:10px; font-size:13.5px; color:var(--c-muted);
+  line-height:1.5;
+}
+.notes li::before{
+  content:""; width:6px; height:6px; border-radius:2px; background:var(--c-accent);
+  margin-top:7px; margin-left:5px;
+}
+.notes li b{color:var(--c-fg); font-weight:600;}
+.notes li.warn::before{background:#D97706;}
+
+.screen{display:none;}
+.screen.is-active{display:block; animation:fade .22s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+@media (prefers-reduced-motion: reduce){ .screen.is-active{animation:none;} }
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;}
+  .rail{position:static; height:auto; border-right:0; border-bottom:1px solid var(--c-line);}
+  .rail__foot{margin-top:12px;}
+  .stage{padding:24px 18px 104px;}
+  .stage__title{font-size:24px;}
+  .roles{padding:0 18px;}
+}
+@media (hover:none){ .swipe-hint{display:block;} }
+
+/* ============================================================
+   PRODUCT DESIGN SYSTEM  (everything inside .ui)
+   ============================================================ */
+.ui{font-size:14px; line-height:1.5; color:var(--p-fg); min-width:940px;}
+.ui.ui--fluid{min-width:0;}
+.ui *{box-sizing:border-box;}
+.ui h1,.ui h2,.ui h3,.ui h4,.ui p{margin:0;}
+.ui h1{font-size:27px; line-height:1.18; letter-spacing:-.02em; font-weight:660;}
+.ui h2{font-size:19px; line-height:1.3; letter-spacing:-.014em; font-weight:640;}
+.ui h3{font-size:15px; line-height:1.35; font-weight:620;}
+.ui h4{font-size:12.5px; line-height:1.35; font-weight:640;}
+.ui small{font-size:12.5px;}
+.u-muted{color:var(--p-muted);}
+.u-faint{color:var(--p-faint);}
+.u-num{font-variant-numeric:tabular-nums;}
+.label{
+  font-size:10.5px; text-transform:uppercase; letter-spacing:.1em; font-weight:640;
+  color:var(--p-faint);
+}
+
+/* app bar */
+.appbar{
+  display:flex; align-items:center; gap:22px; padding:0 26px; height:62px;
+  border-bottom:1px solid var(--p-line); background:var(--p-surface);
+}
+.logo{display:flex; align-items:center; gap:9px; font-weight:660; letter-spacing:-.015em; font-size:15.5px;}
+.logo__mark{
+  width:26px; height:26px; border-radius:8px; background:var(--p-primary); color:var(--p-primary-fg);
+  display:grid; place-items:center; flex:none;
+}
+.appbar__links{display:flex; gap:4px; margin-left:8px;}
+.appbar__links a{
+  padding:6px 11px; border-radius:7px; color:var(--p-muted); text-decoration:none; font-size:13.5px;
+}
+.appbar__links a.is-active{color:var(--p-fg); background:var(--p-subtle); font-weight:590;}
+.appbar__right{margin-left:auto; display:flex; align-items:center; gap:12px;}
+.avatar{
+  width:30px; height:30px; border-radius:50%; background:var(--p-primary-soft); color:var(--p-primary-ink);
+  display:grid; place-items:center; font-size:12px; font-weight:640; flex:none;
+}
+
+/* buttons */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  border-radius:9px; border:1px solid transparent; padding:9px 16px;
+  font:inherit; font-size:13.5px; font-weight:590; cursor:pointer; white-space:nowrap;
+  background:var(--p-subtle); color:var(--p-fg); line-height:1.2;
+}
+.btn--primary{background:var(--p-primary); color:var(--p-primary-fg);}
+.btn--outline{background:transparent; border-color:var(--p-line-strong); color:var(--p-fg);}
+.btn--ghost{background:transparent; color:var(--p-muted);}
+.btn--sm{padding:6px 11px; font-size:12.5px; border-radius:7px;}
+.btn--lg{padding:12px 20px; font-size:15px; border-radius:10px;}
+.btn--block{width:100%;}
+.btn--danger{background:transparent; border-color:var(--st-canc-fg); color:var(--st-canc-fg);}
+.btn[disabled],.btn.is-disabled{opacity:.45; cursor:not-allowed;}
+
+/* surfaces */
+.card{
+  background:var(--p-surface); border:1px solid var(--p-line); border-radius:13px;
+}
+.card--pad{padding:18px;}
+.card--hover{box-shadow:var(--p-shadow);}
+.divider{height:1px; background:var(--p-line); border:0; margin:0;}
+
+/* pills / badges */
+.pill{
+  display:inline-flex; align-items:center; gap:5px; border-radius:999px;
+  padding:3px 10px; font-size:11.5px; font-weight:600; line-height:1.5;
+  background:var(--p-subtle); color:var(--p-muted);
+}
+.pill i{width:6px; height:6px; border-radius:50%; background:currentColor; flex:none;}
+.pill--pend{background:var(--st-pend-bg); color:var(--st-pend-fg);}
+.pill--conf{background:var(--st-conf-bg); color:var(--st-conf-fg);}
+.pill--prog{background:var(--st-prog-bg); color:var(--st-prog-fg);}
+.pill--done{background:var(--st-done-bg); color:var(--st-done-fg);}
+.pill--canc{background:var(--st-canc-bg); color:var(--st-canc-fg);}
+.chip{
+  display:inline-flex; align-items:center; gap:6px; border:1px solid var(--p-line);
+  border-radius:999px; padding:6px 13px; font-size:12.5px; color:var(--p-muted); background:var(--p-surface);
+}
+.chip.is-on{border-color:var(--p-primary); background:var(--p-primary-soft); color:var(--p-primary-ink); font-weight:590;}
+
+/* form fields */
+.field{display:flex; flex-direction:column; gap:6px;}
+.field__label{font-size:12.5px; font-weight:590; color:var(--p-fg);}
+.input{
+  border:1px solid var(--p-line-strong); border-radius:9px; background:var(--p-surface);
+  padding:9px 12px; font-size:13.5px; color:var(--p-fg); min-height:38px; display:flex;
+  align-items:center; gap:8px;
+}
+.input--ph{color:var(--p-faint);}
+.input--focus{border-color:var(--p-primary); box-shadow:0 0 0 3px var(--p-primary-soft);}
+.input--err{border-color:var(--st-canc-fg);}
+.hint{font-size:11.5px; color:var(--p-faint);}
+.hint--err{color:var(--st-canc-fg);}
+.hint--ok{color:var(--p-primary);}
+
+/* photo placeholders — CSS-only car imagery */
+.photo{
+  position:relative; background:linear-gradient(145deg,#8FA6A2,#5C7873); overflow:hidden;
+  display:grid; place-items:center;
+}
+.photo::after{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(120% 90% at 22% 8%, rgba(255,255,255,.34), transparent 58%);
+}
+.photo svg{width:52%; max-width:150px; opacity:.5; color:#fff; position:relative; z-index:1;}
+.photo--a{background:linear-gradient(145deg,#7E97B5,#3F5878);}
+.photo--b{background:linear-gradient(145deg,#A79B8C,#6B5E4E);}
+.photo--c{background:linear-gradient(145deg,#8CA8A0,#456159);}
+.photo--d{background:linear-gradient(145deg,#9B8FA6,#5A4C69);}
+.photo--e{background:linear-gradient(145deg,#B39B96,#75534D);}
+.photo--f{background:linear-gradient(145deg,#7FA3A8,#3A5F66);}
+
+/* car card */
+.carcard{
+  border:1px solid var(--p-line); border-radius:13px; overflow:hidden; background:var(--p-surface);
+  display:flex; flex-direction:column;
+}
+.carcard__img{aspect-ratio:16/10;}
+.carcard__body{padding:13px 14px 15px; display:flex; flex-direction:column; gap:5px;}
+.carcard__top{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+.carcard__name{font-size:14.5px; font-weight:620; letter-spacing:-.01em;}
+.carcard__meta{font-size:12.5px; color:var(--p-muted);}
+.carcard__price{margin-top:6px; display:flex; align-items:baseline; gap:6px;}
+.carcard__price b{font-size:16px; font-weight:660; letter-spacing:-.015em;}
+.star{color:var(--p-star); font-size:12.5px; display:inline-flex; align-items:center; gap:3px; font-weight:600;}
+
+/* layout helpers */
+.row{display:flex; align-items:center; gap:10px;}
+.row--between{justify-content:space-between;}
+.row--wrap{flex-wrap:wrap;}
+.col{display:flex; flex-direction:column;}
+.gap0{gap:0;} .gap1{gap:1px;} .gap2{gap:2px;} .gap3{gap:3px;} .gap4{gap:4px;}
+.gap5{gap:5px;} .gap6{gap:6px;} .gap8{gap:8px;} .gap9{gap:9px;} .gap10{gap:10px;}
+.gap12{gap:12px;} .gap14{gap:14px;} .gap16{gap:16px;} .gap18{gap:18px;}
+.gap20{gap:20px;} .gap24{gap:24px;} .gap32{gap:32px;}
+.pad{padding:26px;}
+.pad--lg{padding:34px 30px;}
+.grow{flex:1; min-width:0;}
+.sec{padding:26px; display:flex; flex-direction:column; gap:18px;}
+
+/* tables */
+.tbl{width:100%; border-collapse:collapse; font-size:13px;}
+.tbl th{
+  text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.09em;
+  color:var(--p-faint); font-weight:640; padding:0 12px 9px; border-bottom:1px solid var(--p-line);
+}
+.tbl td{padding:12px; border-bottom:1px solid var(--p-line); vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:0;}
+.tbl td b{font-weight:600;}
+
+/* price breakdown */
+.price-row{display:flex; justify-content:space-between; font-size:13.5px; color:var(--p-muted);}
+.price-row b{color:var(--p-fg); font-weight:590; font-variant-numeric:tabular-nums;}
+.price-total{display:flex; justify-content:space-between; align-items:baseline; font-weight:660;}
+.price-total span{font-size:15px;}
+.price-total b{font-size:22px; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+
+/* sidebar shells */
+.side{
+  width:212px; flex:none; border-right:1px solid var(--p-line); background:var(--p-surface);
+  padding:16px 12px; display:flex; flex-direction:column; gap:2px;
+}
+.side a{
+  display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:8px;
+  color:var(--p-muted); text-decoration:none; font-size:13.5px;
+}
+.side a.is-active{background:var(--p-primary-soft); color:var(--p-primary-ink); font-weight:600;}
+.side__label{
+  font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--p-faint);
+  font-weight:640; padding:14px 10px 6px;
+}
+
+/* stat tile */
+.stat{border:1px solid var(--p-line); border-radius:12px; padding:15px 16px; background:var(--p-surface);}
+.stat__k{font-size:11.5px; color:var(--p-muted); font-weight:560;}
+.stat__v{font-size:25px; font-weight:660; letter-spacing:-.025em; margin-top:5px; font-variant-numeric:tabular-nums;}
+.stat__d{font-size:11.5px; color:var(--p-muted); margin-top:2px;}
+.stat__d b{color:var(--p-primary); font-weight:620;}
+
+/* timeline */
+.tl{display:flex; align-items:center; gap:0;}
+.tl__step{display:flex; flex-direction:column; align-items:center; gap:7px; flex:none; width:104px; text-align:center;}
+.tl__dot{
+  width:26px; height:26px; border-radius:50%; border:2px solid var(--p-line-strong);
+  background:var(--p-surface); display:grid; place-items:center; font-size:11px; color:var(--p-faint);
+}
+.tl__step.is-done .tl__dot{background:var(--p-primary); border-color:var(--p-primary); color:var(--p-primary-fg);}
+.tl__step.is-now .tl__dot{border-color:var(--p-primary); color:var(--p-primary); box-shadow:0 0 0 4px var(--p-primary-soft);}
+.tl__t{font-size:11.5px; color:var(--p-muted);}
+.tl__step.is-now .tl__t,.tl__step.is-done .tl__t{color:var(--p-fg); font-weight:590;}
+.tl__bar{height:2px; background:var(--p-line); flex:1; min-width:14px;}
+.tl__bar.is-done{background:var(--p-primary);}
+
+/* skeleton */
+.sk{background:var(--p-subtle-2); border-radius:6px;}
+
+/* misc */
+.stepper{display:flex; align-items:center; gap:10px;}
+.stepper__i{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--p-faint);}
+.stepper__n{
+  width:22px; height:22px; border-radius:50%; border:1.5px solid var(--p-line-strong);
+  display:grid; place-items:center; font-size:11px; font-weight:640;
+}
+.stepper__i.is-done .stepper__n{background:var(--p-primary); border-color:var(--p-primary); color:var(--p-primary-fg);}
+.stepper__i.is-now{color:var(--p-fg); font-weight:600;}
+.stepper__i.is-now .stepper__n{border-color:var(--p-primary); color:var(--p-primary);}
+.stepper__line{width:26px; height:1.5px; background:var(--p-line);}
+
+.upload{
+  border:1.5px dashed var(--p-line-strong); border-radius:11px; padding:18px;
+  display:flex; flex-direction:column; align-items:center; gap:7px; text-align:center;
+  background:var(--p-subtle); color:var(--p-muted);
+}
+.swatch{border-radius:9px; height:56px; border:1px solid var(--p-line);}
+.toast{
+  display:flex; gap:11px; align-items:flex-start; border:1px solid var(--p-line);
+  background:var(--p-surface); border-radius:11px; padding:12px 14px; box-shadow:var(--p-shadow);
+  max-width:370px;
+}
+.toast__ic{
+  width:22px; height:22px; border-radius:50%; display:grid; place-items:center; flex:none;
+  font-size:12px; font-weight:700;
+}
+.slider{height:5px; border-radius:3px; background:var(--p-subtle-2); position:relative;}
+.slider i{position:absolute; height:100%; border-radius:3px; background:var(--p-primary);}
+.slider b{
+  position:absolute; top:50%; width:15px; height:15px; border-radius:50%; background:var(--p-surface);
+  border:2px solid var(--p-primary); transform:translate(-50%,-50%);
+}
+.gapline{border-left:3px solid var(--st-pend-fg); background:var(--st-pend-bg); border-radius:0 9px 9px 0;
+  padding:10px 13px; font-size:12.5px; color:var(--st-pend-fg);}
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <span class="brand__mark" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6.5 17l-1.3-5.2a2 2 0 0 1 .3-1.7l1.6-2.3A2 2 0 0 1 8.7 7h6.6a2 2 0 0 1 1.6.8l1.6 2.3a2 2 0 0 1 .3 1.7L17.5 17"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/></svg>
+      </span>
+      <span>
+        <span class="brand__name">CarRental</span><br>
+        <span class="brand__sub">UI/UX Spec v1</span>
+      </span>
+    </div>
+
+    <div>
+      <p class="nav-group__label" style="padding:0 20px 8px;">Walk through as</p>
+      <div class="roles" id="roles" role="tablist" aria-label="Walk through as a role"></div>
+    </div>
+
+    <nav class="nav-group" id="nav"></nav>
+
+    <div class="rail__foot">
+      <button class="tbtn" id="themeBtn" type="button">Toggle theme</button>
+      <p style="font-size:11.5px; color:var(--c-faint); margin:0; line-height:1.5;">
+        Mockups only — no React written yet. Every screen is checked against the live .NET API contract.
+      </p>
+    </div>
+  </aside>
+
+  <main class="stage" id="stage"></main>
+</div>
+
+<div class="pager" id="pager">
+  <button class="pager__btn" id="prevBtn" type="button" aria-label="Previous screen">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+  </button>
+  <span class="pager__label" id="pagerLabel"></span>
+  <span class="pager__dots" id="pagerDots"></span>
+  <button class="pager__btn" id="nextBtn" type="button" aria-label="Next screen">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+  </button>
+</div>
+
+<script>
+const CAR_SVG = '<svg viewBox="0 0 120 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 34h104M14 34l-3-13a5 5 0 0 1 1-4.4l7-8A5 5 0 0 1 22.8 7h50a5 5 0 0 1 3.6 1.5l9 9.5 18 3.5a5 5 0 0 1 4 5v7.5"/><path d="M40 8v10M62 8v10M18 21h84"/><circle cx="34" cy="35" r="7"/><circle cx="88" cy="35" r="7"/></svg>';
+const photo = (v, cls='') => `<div class="photo ${v} ${cls}">${CAR_SVG}</div>`;
+const ico = (d, s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I = {
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+  pin:'<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>',
+  fuel:'<path d="M4 20V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15M3 20h13M14 9h3a2 2 0 0 1 2 2v5a1.6 1.6 0 0 0 3 0V9l-3-3"/>',
+  seat:'<path d="M6 4h5a3 3 0 0 1 3 3v7H9a3 3 0 0 1-3-3Z"/><path d="M6 14h11a3 3 0 0 1 3 3v3M4 20h4"/>',
+  door:'<path d="M4 20V6l10-2v18M4 20h16M9 13h.01"/>',
+  road:'<path d="M4 21 8 3M20 21 16 3M12 5v3M12 12v3M12 19v2"/>',
+  up:'<path d="M12 19V6M6 12l6-6 6 6"/>',
+  check:'<path d="m5 13 4 4L19 7"/>',
+  cam:'<path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/>',
+  shield:'<path d="M12 3 5 6v5.5c0 4 3 7.6 7 9.5 4-1.9 7-5.5 7-9.5V6Z"/><path d="m9 12 2 2 4-4"/>',
+  bolt:'<path d="M13 3 5 14h6l-1 7 8-11h-6Z"/>',
+  car:'<path d="M5 17h14M6.5 17l-1.3-5.2a2 2 0 0 1 .3-1.7l1.6-2.3A2 2 0 0 1 8.7 7h6.6a2 2 0 0 1 1.6.8l1.6 2.3a2 2 0 0 1 .3 1.7L17.5 17"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  alert:'<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/>',
+};
+
+const nav = (active) => `
+<div class="appbar">
+  <span class="logo"><span class="logo__mark">${ico(I.car,15)}</span>CarRental</span>
+  <nav class="appbar__links">
+    <a href="#" class="${active==='search'?'is-active':''}">Find a car</a>
+    <a href="#" class="${active==='trips'?'is-active':''}">My trips</a>
+    <a href="#" class="${active==='host'?'is-active':''}">List your car</a>
+  </nav>
+  <div class="appbar__right">
+    <span class="pill pill--conf"><i></i>Verified</span>
+    <span class="avatar">OA</span>
+  </div>
+</div>`;
+
+const searchbar = (compact) => `
+<div class="row ${compact?'':'gap8'}" style="border:1px solid var(--p-line-strong); border-radius:${compact?'10px':'14px'}; background:var(--p-surface); padding:${compact?'5px 5px 5px 14px':'7px 7px 7px 18px'}; box-shadow:var(--p-shadow);">
+  <div class="col" style="flex:1.3; min-width:0;">
+    <span class="label">Where</span>
+    <span style="font-size:13.5px; font-weight:590;">Cairo</span>
+  </div>
+  <div style="width:1px; align-self:stretch; background:var(--p-line); margin:0 4px;"></div>
+  <div class="col" style="flex:1;">
+    <span class="label">From</span>
+    <span style="font-size:13.5px; font-weight:590;">Fri 31 Jul</span>
+  </div>
+  <div style="width:1px; align-self:stretch; background:var(--p-line); margin:0 4px;"></div>
+  <div class="col" style="flex:1;">
+    <span class="label">Until</span>
+    <span style="font-size:13.5px; font-weight:590;">Mon 3 Aug</span>
+  </div>
+  <button class="btn btn--primary" style="border-radius:${compact?'8px':'11px'}; padding:${compact?'9px 14px':'12px 20px'};">${ico(I.search,16)} Search</button>
+</div>`;
+
+const carcard = (v, name, meta, rating, trips, city, day, total, badge='') => `
+<div class="carcard">
+  <div class="carcard__img">${photo(v)}</div>
+  <div class="carcard__body">
+    <div class="carcard__top">
+      <span class="carcard__name">${name}</span>
+      <span class="star">★ ${rating}</span>
+    </div>
+    <span class="carcard__meta">${meta}</span>
+    <span class="carcard__meta u-faint">${city} · ${trips} trips</span>
+    <div class="carcard__price">
+      <b class="u-num">$${day}</b><span class="u-muted" style="font-size:12.5px;">/ day</span>
+      <span class="u-faint u-num" style="font-size:12px; margin-left:auto;">$${total} total</span>
+    </div>
+    ${badge}
+  </div>
+</div>`;
+
+const SCREENS = [];
+const S = (group, title, desc, route, html, notes) => SCREENS.push({group,title,desc,route,html,notes});
+
+/* ─────────────────────────── 1. LANDING ─────────────────────────── */
+S('Renter','Landing','The single job of this page is to get a city and a date range into the URL. Everything else is secondary.','/',`
+<div class="ui">
+  ${nav('search')}
+  <div style="position:relative; padding:56px 30px 44px; background:linear-gradient(160deg,var(--p-primary-soft),var(--p-subtle) 70%); border-bottom:1px solid var(--p-line);">
+    <div style="max-width:880px; margin:0 auto; text-align:center;">
+      <h1 style="font-size:40px; letter-spacing:-.03em; text-wrap:balance;">Skip the rental counter.<br>Book a car from someone nearby.</h1>
+      <p class="u-muted" style="margin-top:12px; font-size:15.5px;">Hundreds of cars from local owners — insured, verified, and ready when you are.</p>
+      <div style="max-width:660px; margin:26px auto 0;">${searchbar(false)}</div>
+      <p class="u-faint" style="margin-top:11px; font-size:12px;">Dates default to tomorrow through Monday — change them any time.</p>
+    </div>
+  </div>
+
+  <div class="sec" style="max-width:1180px; margin:0 auto;">
+    <div class="row row--between">
+      <h2>Browse by category</h2>
+      <a href="#" style="color:var(--p-primary); font-size:13px; text-decoration:none; font-weight:590;">See all cars →</a>
+    </div>
+    <div class="row row--wrap gap10">
+      <span class="chip is-on">${ico(I.car,14)} All</span>
+      <span class="chip">Economy</span><span class="chip">Compact</span><span class="chip">SUV</span>
+      <span class="chip">Luxury</span><span class="chip">Convertible</span><span class="chip">Minivan</span>
+      <span class="chip">Pickup</span><span class="chip">${ico(I.bolt,14)} Electric</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:18px;">
+      ${carcard('photo--a','Toyota Corolla 2022','Automatic · Petrol · 5 seats','4.9','48','Cairo','42','176')}
+      ${carcard('photo--c','Hyundai Tucson 2023','Automatic · Diesel · 5 seats','4.8','31','Giza','68','285')}
+      ${carcard('photo--d','Tesla Model 3 2024','Automatic · Electric · 5 seats','5.0','12','Cairo','110','462')}
+      ${carcard('photo--b','Kia Picanto 2021','Manual · Petrol · 4 seats','4.6','96','Alexandria','28','118')}
+    </div>
+
+    <div class="card card--pad" style="display:grid; grid-template-columns:repeat(3,1fr); gap:26px; background:var(--p-subtle); border:0;">
+      <div class="col gap8"><span class="avatar" style="width:34px;height:34px;">${ico(I.search,16)}</span><h3>Search real availability</h3><p class="u-muted" style="font-size:13px;">Only cars actually free on your dates are shown — blackout dates and confirmed trips are filtered out server-side.</p></div>
+      <div class="col gap8"><span class="avatar" style="width:34px;height:34px;">${ico(I.shield,16)}</span><h3>Verified drivers</h3><p class="u-muted" style="font-size:13px;">Upload your licence and ID once. Owners see a verified badge before they hand over the keys.</p></div>
+      <div class="col gap8"><span class="avatar" style="width:34px;height:34px;">${ico(I.check,16)}</span><h3>Documented handover</h3><p class="u-muted" style="font-size:13px;">Odometer, fuel, cleanliness and damage are recorded at pickup and return, with photos.</p></div>
+    </div>
+
+    <div class="card card--pad row row--between" style="background:var(--p-primary); border:0; color:var(--p-primary-fg); padding:26px 30px;">
+      <div class="col gap4">
+        <h2 style="color:var(--p-primary-fg);">Your car could be earning while it sits</h2>
+        <p style="font-size:13.5px; opacity:.85;">List it in about five minutes. You set the price, the mileage limit and the dates.</p>
+      </div>
+      <button class="btn btn--lg" style="background:var(--p-primary-fg); color:var(--p-primary);">Become an owner</button>
+    </div>
+  </div>
+</div>`,[
+`<b>Dates are pre-filled, always.</b> <code class="mono">GET /api/cars/search</code> requires <code class="mono">StartDate</code> and <code class="mono">EndDate</code> — there is no date-less browse, so the hero seeds tomorrow → +3 days rather than showing an empty state.`,
+`<b>Category chips deep-link</b> into <code class="mono">/search?category=SUV</code>. The API accepts enum <i>names</i> in query strings, so the URL stays readable.`,
+`<b>Featured cards come from the same search call</b> as the results page — the only endpoint that returns <code class="mono">imageUrls</code>. No separate "featured" endpoint is needed or exists.`,
+`<b>Copy names things the way people say them</b> — "Find a car", not "Browse listings"; "My trips", not "Bookings".`]);
+
+/* ─────────────────────────── 2. SEARCH ─────────────────────────── */
+S('Renter','Search results','Filter rail plus a photo-forward grid. Filter state lives in the URL so results are shareable and the back button works.','/search?city=Cairo&start=2026-07-31&end=2026-08-03',`
+<div class="ui">
+  ${nav('search')}
+  <div style="padding:14px 26px; border-bottom:1px solid var(--p-line); background:var(--p-surface);">
+    <div style="max-width:720px;">${searchbar(true)}</div>
+  </div>
+  <div style="display:grid; grid-template-columns:250px minmax(0,1fr); gap:0;">
+    <aside style="border-right:1px solid var(--p-line); padding:20px 18px; display:flex; flex-direction:column; gap:20px;">
+      <div class="row row--between">
+        <h3>Filters</h3>
+        <button class="btn btn--ghost btn--sm" style="padding:2px 4px;">Clear all</button>
+      </div>
+      <div class="col gap10">
+        <span class="label">Price per day</span>
+        <div class="slider" style="margin:8px 6px 4px;"><i style="left:12%; right:38%;"></i><b style="left:12%;"></b><b style="left:62%;"></b></div>
+        <div class="row row--between"><span class="u-muted u-num" style="font-size:12px;">$25</span><span class="u-muted u-num" style="font-size:12px;">$120</span></div>
+      </div>
+      <hr class="divider">
+      <div class="col gap10">
+        <span class="label">Category</span>
+        <div class="row row--wrap gap6">
+          <span class="chip is-on" style="padding:4px 10px; font-size:12px;">SUV</span>
+          <span class="chip" style="padding:4px 10px; font-size:12px;">Economy</span>
+          <span class="chip" style="padding:4px 10px; font-size:12px;">Luxury</span>
+          <span class="chip" style="padding:4px 10px; font-size:12px;">Compact</span>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="col gap10">
+        <span class="label">Transmission</span>
+        <div class="row gap6"><span class="chip is-on" style="padding:4px 12px; font-size:12px;">Automatic</span><span class="chip" style="padding:4px 12px; font-size:12px;">Manual</span></div>
+      </div>
+      <hr class="divider">
+      <div class="col gap8">
+        <span class="label">Features</span>
+        ${['Air conditioning','GPS','Bluetooth','USB charging','Backup camera','Child seat'].map((f,i)=>`
+        <label class="row gap8" style="font-size:13px; color:var(--p-muted);">
+          <span style="width:15px;height:15px;border-radius:4px;border:1.5px solid ${i<2?'var(--p-primary)':'var(--p-line-strong)'};background:${i<2?'var(--p-primary)':'transparent'};color:var(--p-primary-fg);display:grid;place-items:center;">${i<2?ico(I.check,10):''}</span>
+          <span style="${i<2?'color:var(--p-fg);font-weight:560;':''}">${f}</span>
+        </label>`).join('')}
+      </div>
+      <hr class="divider">
+      <div class="col gap8">
+        <span class="label">Minimum rating</span>
+        <div class="row gap6"><span class="chip" style="padding:4px 10px; font-size:12px;">Any</span><span class="chip is-on" style="padding:4px 10px; font-size:12px;">★ 4.5+</span></div>
+      </div>
+    </aside>
+
+    <section style="padding:20px 26px 30px; display:flex; flex-direction:column; gap:16px;">
+      <div class="row row--between">
+        <div class="col">
+          <h2>34 cars in Cairo</h2>
+          <span class="u-muted" style="font-size:13px;">31 Jul – 3 Aug · 3 days</span>
+        </div>
+        <div class="row gap8">
+          <span class="input" style="min-height:34px; padding:6px 11px; font-size:12.5px;">Top rated ▾</span>
+          <div class="row" style="border:1px solid var(--p-line-strong); border-radius:8px; overflow:hidden;">
+            <span style="padding:7px 9px; background:var(--p-subtle); color:var(--p-fg);">${ico(I.grid,15)}</span>
+            <span style="padding:7px 9px; color:var(--p-faint);">${ico(I.list,15)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px;">
+        ${carcard('photo--c','Hyundai Tucson 2023','Automatic · Diesel · 5 seats','4.8','31','Nasr City','68','285','<span class="pill pill--conf" style="align-self:flex-start;margin-top:7px;"><i></i>Free on your dates</span>')}
+        ${carcard('photo--a','Toyota RAV4 2022','Automatic · Petrol · 5 seats','4.9','52','Maadi','75','315')}
+        ${carcard('photo--f','Jeep Compass 2021','Automatic · Petrol · 5 seats','4.7','24','Zamalek','62','260')}
+        ${carcard('photo--d','Kia Sportage 2023','Automatic · Hybrid · 5 seats','4.9','18','Heliopolis','71','298')}
+        <div class="carcard">
+          <div class="carcard__img sk"></div>
+          <div class="carcard__body gap8" style="padding-top:14px;">
+            <div class="sk" style="height:12px; width:70%;"></div>
+            <div class="sk" style="height:10px; width:52%;"></div>
+            <div class="sk" style="height:10px; width:40%;"></div>
+            <div class="sk" style="height:16px; width:32%; margin-top:6px;"></div>
+          </div>
+        </div>
+        <div class="carcard">
+          <div class="carcard__img sk"></div>
+          <div class="carcard__body gap8" style="padding-top:14px;">
+            <div class="sk" style="height:12px; width:64%;"></div>
+            <div class="sk" style="height:10px; width:56%;"></div>
+            <div class="sk" style="height:10px; width:36%;"></div>
+            <div class="sk" style="height:16px; width:30%; margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row row--between" style="padding-top:6px;">
+        <span class="u-muted" style="font-size:12.5px;">Showing 1–20 of 34</span>
+        <div class="row gap6">
+          <span class="btn btn--outline btn--sm is-disabled">Previous</span>
+          <span class="btn btn--sm" style="background:var(--p-primary);color:var(--p-primary-fg);width:30px;padding:6px 0;">1</span>
+          <span class="btn btn--outline btn--sm" style="width:30px;padding:6px 0;">2</span>
+          <span class="btn btn--outline btn--sm">Next</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>`,[
+`<b>Two cards are deliberately shown as skeletons</b> — the loading state is part of the design, not an afterthought. Cards keep their exact final dimensions so nothing jumps when data lands.`,
+`<b>Feature checkboxes map to the six keys the API accepts</b>: <code class="mono">gps, bluetooth, usb, childseat, ac, backupcamera</code>. Anything else is silently ignored server-side, so the UI never offers a filter that does nothing.`,
+`<b>Server-side paging at 20/page</b> matches the API default. Page size above 100 is silently reset by the backend, so the UI never offers it.`,
+`<b>Empty state (not shown)</b> offers two one-click repairs — "widen the dates" and "clear filters" — rather than a dead end. City matching is exact and lowercase server-side, so a typo'd city returns zero results and needs that escape hatch.`,
+`<b>Filters live in the URL.</b> Sharing a result set, refreshing, and browser back all behave.`]);
+
+/* ─────────────────────────── 3. CAR DETAIL ─────────────────────────── */
+S('Renter','Car detail','Gallery and specs on the left, a sticky booking panel on the right that follows you down the page.','/cars/a1f4…9c/',`
+<div class="ui">
+  ${nav('search')}
+  <div style="padding:20px 26px 34px; max-width:1180px; margin:0 auto;">
+    <div class="row gap6 u-muted" style="font-size:12.5px; margin-bottom:14px;">
+      <span>Search</span><span class="u-faint">/</span><span>Cairo</span><span class="u-faint">/</span><span style="color:var(--p-fg);">Hyundai Tucson 2023</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns:2.2fr 1fr; gap:10px; height:320px; margin-bottom:24px; border-radius:14px; overflow:hidden;">
+      ${photo('photo--c')}
+      <div style="display:grid; grid-template-rows:1fr 1fr; gap:10px;">
+        ${photo('photo--a')}
+        <div style="position:relative;">${photo('photo--f')}
+          <span style="position:absolute; inset:0; background:rgba(8,14,13,.55); color:#fff; display:grid; place-items:center; font-size:13px; font-weight:600;">+6 photos</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) 344px; gap:36px; align-items:start;">
+      <div class="col gap24">
+        <div class="col gap8">
+          <div class="row row--between">
+            <h1>Hyundai Tucson 2023</h1>
+            <span class="star" style="font-size:14px;">★ 4.8 <span class="u-muted" style="font-weight:400;">(31 reviews · 31 trips)</span></span>
+          </div>
+          <span class="u-muted row gap6">${ico(I.pin,15)} Nasr City, Cairo</span>
+        </div>
+
+        <div>
+          <h3 style="margin-bottom:12px;">Specs</h3>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+            ${[[I.gear,'Transmission','Automatic'],[I.fuel,'Fuel','Diesel'],[I.seat,'Seats','5 seats'],[I.door,'Doors','4 doors'],[I.road,'Odometer','62,400 km'],[I.car,'Category','SUV']]
+              .map(([d,k,v])=>`<div class="card card--pad row gap12" style="padding:13px 15px;">
+                <span class="u-faint">${ico(d,19)}</span>
+                <span class="col"><span class="u-muted" style="font-size:11.5px;">${k}</span><span style="font-weight:590; font-size:13.5px;">${v}</span></span>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div>
+          <h3 style="margin-bottom:12px;">What's included</h3>
+          <div class="row row--wrap gap8">
+            ${['Air conditioning','Bluetooth','USB charging','Backup camera','GPS'].map(f=>`<span class="chip is-on">${ico(I.check,13)} ${f}</span>`).join('')}
+            <span class="chip" style="opacity:.5; text-decoration:line-through;">Child seat</span>
+          </div>
+        </div>
+
+        <div class="card card--pad col gap12">
+          <h3>Mileage &amp; deposit</h3>
+          <div class="row row--between"><span class="u-muted">Included per day</span><b class="u-num">250 km</b></div>
+          <div class="row row--between"><span class="u-muted">Beyond that</span><b class="u-num">$0.35 / km</b></div>
+          <div class="row row--between"><span class="u-muted">Security deposit</span><b class="u-num">$200 — refunded after return</b></div>
+        </div>
+
+        <div class="card card--pad row gap16">
+          <span class="avatar" style="width:46px;height:46px;font-size:15px;">MH</span>
+          <div class="col grow gap4">
+            <div class="row gap8"><h3>Mostafa H.</h3><span class="pill pill--conf"><i></i>ID verified</span></div>
+            <span class="u-muted" style="font-size:13px;">Owner since 2024 · 3 cars listed · usually replies within an hour</span>
+          </div>
+        </div>
+      </div>
+
+      <aside style="position:sticky; top:20px;">
+        <div class="card card--pad card--hover col gap16">
+          <div class="row" style="align-items:baseline; gap:6px;">
+            <span style="font-size:26px; font-weight:660; letter-spacing:-.025em;" class="u-num">$68</span>
+            <span class="u-muted">per day</span>
+            <span class="star" style="margin-left:auto;">★ 4.8</span>
+          </div>
+
+          <div class="row gap0" style="border:1px solid var(--p-line-strong); border-radius:10px; overflow:hidden;">
+            <div class="col grow" style="padding:8px 12px;"><span class="label">From</span><span style="font-size:13px; font-weight:590;">Fri 31 Jul, 10:00</span></div>
+            <div style="width:1px; align-self:stretch; background:var(--p-line);"></div>
+            <div class="col grow" style="padding:8px 12px;"><span class="label">Until</span><span style="font-size:13px; font-weight:590;">Mon 3 Aug, 10:00</span></div>
+          </div>
+
+          <div class="col gap8">
+            <div class="price-row"><span>$68 × 3 days</span><b>$204.00</b></div>
+            <div class="price-row"><span>Service fee (10%)</span><b>$20.40</b></div>
+            <div class="price-row"><span>Tax (5%)</span><b>$10.20</b></div>
+            <div class="price-row"><span>Security deposit</span><b>$200.00</b></div>
+            <hr class="divider">
+            <div class="price-total"><span>Total</span><b class="u-num">$434.60</b></div>
+            <span class="hint">Deposit is held, not charged. Final amount is confirmed by the server when you book.</span>
+          </div>
+
+          <button class="btn btn--primary btn--lg btn--block">Continue to book</button>
+          <span class="hint" style="text-align:center;">You won't be charged yet.</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>`,[
+`<b>Known API gap:</b> <code class="mono">GET /api/cars/{id}</code> returns a <code class="mono">CarDto</code> with <i>no images</i>. Only <code class="mono">/search</code> returns <code class="mono">imageUrls</code>. Until the DTO is extended, the detail page pairs the car fetch with a search call to hydrate the gallery, and falls back to a branded placeholder.`,
+`<b>The price panel is an estimate and says so.</b> The server recomputes subtotal + 10% service + 5% tax + deposit on create; the UI mirrors that formula from one shared <code class="mono">PriceBreakdown</code> component so the two can never drift.`,
+`<b>Unavailable features are shown struck through</b> rather than hidden — absence is information when you're comparing two cars.`,
+`<b>Sticky panel becomes a fixed bottom bar under 768px</b> (see the Mobile screen).`,
+`<b>No review-writing UI.</b> <code class="mono">averageRating</code> and <code class="mono">totalReviews</code> are read-only fields; there is no reviews endpoint, so the design never implies you can leave one.`]);
+
+/* ─────────────────────────── 4. CHECKOUT ─────────────────────────── */
+S('Renter','Checkout','One screen, no surprises: confirm the dates, read the total, book. Verification is nudged here, not enforced.','/cars/a1f4…9c/book',`
+<div class="ui">
+  ${nav('search')}
+  <div style="padding:26px; max-width:1000px; margin:0 auto;">
+    <div class="col gap6" style="margin-bottom:22px;">
+      <h1>Confirm your trip</h1>
+      <p class="u-muted">Review the details below. Nothing is charged until the owner starts the trip.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) 348px; gap:32px; align-items:start;">
+      <div class="col gap18" style="gap:18px;">
+        <div class="card card--pad col gap16">
+          <h3>Trip dates</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div class="field"><span class="field__label">Pick-up</span><span class="input">${ico(I.cal,15)} Fri 31 Jul 2026 · 10:00</span></div>
+            <div class="field"><span class="field__label">Return</span><span class="input">${ico(I.cal,15)} Mon 3 Aug 2026 · 10:00</span></div>
+          </div>
+          <span class="hint">3 days. Times are shown in your local timezone and sent to the server as UTC.</span>
+        </div>
+
+        <div class="card card--pad col gap14">
+          <h3>Your car</h3>
+          <div class="row gap14">
+            <div style="width:132px; height:84px; border-radius:10px; overflow:hidden; flex:none;">${photo('photo--c')}</div>
+            <div class="col gap4 grow">
+              <span style="font-weight:620;">Hyundai Tucson 2023</span>
+              <span class="u-muted" style="font-size:13px;">Automatic · Diesel · 5 seats · SUV</span>
+              <span class="u-muted row gap5" style="font-size:13px;">${ico(I.pin,14)} 14 El-Nasr Road, Nasr City, Cairo</span>
+            </div>
+            <button class="btn btn--outline btn--sm">Change</button>
+          </div>
+        </div>
+
+        <div class="card card--pad col gap12" style="border-color:var(--st-pend-fg);">
+          <div class="row gap10">
+            <span style="color:var(--st-pend-fg);">${ico(I.alert,18)}</span>
+            <div class="col gap4 grow">
+              <h3>Finish verification before pick-up</h3>
+              <p class="u-muted" style="font-size:13px;">Your driving licence is still under review. You can book now, but the owner may not release the car until it's approved.</p>
+            </div>
+            <button class="btn btn--outline btn--sm">Upload documents</button>
+          </div>
+        </div>
+
+        <div class="card card--pad col gap10">
+          <h3>Cancellation</h3>
+          <p class="u-muted" style="font-size:13px;">You can cancel any time before the trip starts. Once the owner marks the trip as started, it can no longer be cancelled.</p>
+        </div>
+      </div>
+
+      <aside style="position:sticky; top:20px;">
+        <div class="card card--pad card--hover col gap16">
+          <h3>Price details</h3>
+          <div class="col gap9" style="gap:9px;">
+            <div class="price-row"><span>$68.00 × 3 days</span><b>$204.00</b></div>
+            <div class="price-row"><span>Service fee <span class="u-faint">(10%)</span></span><b>$20.40</b></div>
+            <div class="price-row"><span>Tax <span class="u-faint">(5%)</span></span><b>$10.20</b></div>
+            <hr class="divider">
+            <div class="price-row"><span>Trip total</span><b>$234.60</b></div>
+            <div class="price-row"><span>Security deposit <span class="u-faint">(held)</span></span><b>$200.00</b></div>
+            <hr class="divider">
+            <div class="price-total"><span>Due at pick-up</span><b class="u-num">$434.60</b></div>
+          </div>
+          <button class="btn btn--primary btn--lg btn--block">Request this car</button>
+          <span class="hint" style="text-align:center;">The owner confirms your request before pick-up.</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>`,[
+`<b>Amounts are never sent to the server.</b> <code class="mono">POST /api/bookings</code> takes only <code class="mono">carId, renterId, startDate, endDate</code> — the server computes and snapshots every figure. The UI displays its own mirror of that math and then re-renders from the returned booking.`,
+`<b><code class="mono">renterId</code> is injected by the API client</b> from the decoded JWT, never a form field. The backend trusts whatever it's sent, so the client is the only thing keeping it honest.`,
+`<b>Verification is a nudge, not a gate.</b> The backend does not require verified documents to book, so blocking here would be a lie about the system's behaviour.`,
+`<b>Local time in, UTC out.</b> Postgres columns are <code class="mono">timestamptz</code> and Npgsql throws on non-UTC writes — a single <code class="mono">toUtcIso()</code> helper guards every date field in the app.`,
+`<b>"Request this car", not "Book now".</b> New bookings land in <code class="mono">Pending</code>, so the button promises exactly what happens.`]);
+
+/* ─────────────────────────── 5. BOOKING DETAIL ─────────────────────────── */
+S('Renter','Booking confirmation','The receipt and the live status of one trip, with the status machine made visible.','/bookings/7c2b…41',`
+<div class="ui">
+  ${nav('trips')}
+  <div style="padding:26px; max-width:960px; margin:0 auto;">
+    <div class="card card--pad row gap14" style="background:var(--p-primary-soft); border-color:transparent; margin-bottom:22px;">
+      <span style="width:38px;height:38px;border-radius:50%;background:var(--p-primary);color:var(--p-primary-fg);display:grid;place-items:center;flex:none;">${ico(I.check,20)}</span>
+      <div class="col gap3">
+        <h2>Request sent to Mostafa</h2>
+        <p class="u-muted" style="font-size:13.5px;">Booking <span class="mono">#7C2B41</span> · created 28 Jul 2026, 14:32</p>
+      </div>
+      <span class="pill pill--pend" style="margin-left:auto;"><i></i>Pending</span>
+    </div>
+
+    <div class="card card--pad" style="margin-bottom:18px;">
+      <div class="tl">
+        <div class="tl__step is-done"><span class="tl__dot">${ico(I.check,13)}</span><span class="tl__t">Requested</span></div>
+        <span class="tl__bar is-done"></span>
+        <div class="tl__step is-now"><span class="tl__dot">2</span><span class="tl__t">Confirmed</span></div>
+        <span class="tl__bar"></span>
+        <div class="tl__step"><span class="tl__dot">3</span><span class="tl__t">In progress</span></div>
+        <span class="tl__bar"></span>
+        <div class="tl__step"><span class="tl__dot">4</span><span class="tl__t">Completed</span></div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:26px; align-items:start;">
+      <div class="col gap18" style="gap:18px;">
+        <div class="card card--pad col gap14">
+          <h3>Your car</h3>
+          <div class="row gap14">
+            <div style="width:128px; height:82px; border-radius:10px; overflow:hidden; flex:none;">${photo('photo--c')}</div>
+            <div class="col gap4 grow">
+              <span style="font-weight:620;">Hyundai Tucson 2023 · Silver</span>
+              <span class="u-muted" style="font-size:13px;">Nasr City, Cairo</span>
+              <a href="#" style="color:var(--p-primary); font-size:13px; text-decoration:none; font-weight:590;">View listing →</a>
+            </div>
+          </div>
+          <hr class="divider">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="col gap3"><span class="label">Pick-up</span><span style="font-weight:590;">Fri 31 Jul 2026, 10:00</span></div>
+            <div class="col gap3"><span class="label">Return</span><span style="font-weight:590;">Mon 3 Aug 2026, 10:00</span></div>
+          </div>
+        </div>
+
+        <div class="card card--pad col gap12">
+          <h3>What happens next</h3>
+          <div class="col gap10">
+            <div class="row gap10"><span class="u-faint">${ico(I.clock,16)}</span><span class="u-muted" style="font-size:13.5px;">Mostafa reviews your request and confirms.</span></div>
+            <div class="row gap10"><span class="u-faint">${ico(I.cam,16)}</span><span class="u-muted" style="font-size:13.5px;">At pick-up you'll both check the odometer, fuel and condition together.</span></div>
+            <div class="row gap10"><span class="u-faint">${ico(I.check,16)}</span><span class="u-muted" style="font-size:13.5px;">Return the car, the same check runs, and your deposit is released.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="col gap14">
+        <div class="card card--pad col gap10">
+          <h3>Payment summary</h3>
+          <div class="price-row"><span>$68.00 × 3 days</span><b>$204.00</b></div>
+          <div class="price-row"><span>Service fee</span><b>$20.40</b></div>
+          <div class="price-row"><span>Tax</span><b>$10.20</b></div>
+          <div class="price-row"><span>Deposit (held)</span><b>$200.00</b></div>
+          <hr class="divider">
+          <div class="price-total"><span>Total</span><b class="u-num">$434.60</b></div>
+        </div>
+        <button class="btn btn--outline btn--block">Message the owner</button>
+        <button class="btn btn--danger btn--block">Cancel this booking</button>
+        <span class="hint" style="text-align:center;">Free to cancel until the trip starts.</span>
+      </aside>
+    </div>
+  </div>
+</div>`,[
+`<b>The timeline mirrors the real state machine</b> — <code class="mono">Pending → Confirmed → InProgress → Completed</code>, with <code class="mono">Cancelled</code> and <code class="mono">Disputed</code> rendered as a terminal red state replacing the track.`,
+`<b>Cancel opens a dialog with a reason field</b>, posting <code class="mono">cancelledByUserId</code> from the token plus <code class="mono">cancellationReason</code>. The backend never computes <code class="mono">refundAmount</code>, so the UI promises no refund figure.`,
+`<b>"Message the owner" is a v2 stub.</b> There is a <code class="mono">Message</code> table but no endpoint — the button is present in the design and disabled in build one rather than silently dropped.`,
+`<b>Cancel is hidden once status is <code class="mono">Completed</code> or <code class="mono">Cancelled</code></b>, matching the handler guards, so the user can't trigger a 500 by pressing a button that was never going to work.`]);
+
+/* ─────────────────────────── 6. MY TRIPS ─────────────────────────── */
+S('Renter','My trips','Three tabs over one list. The primary action on each row changes with the status.','/trips',`
+<div class="ui">
+  ${nav('trips')}
+  <div style="padding:26px; max-width:1000px; margin:0 auto;">
+    <h1 style="margin-bottom:18px;">My trips</h1>
+    <div class="row gap4" style="border-bottom:1px solid var(--p-line); margin-bottom:20px;">
+      ${[['Upcoming',2,1],['Active',1,0],['Past',7,0]].map(([t,n,on])=>`
+        <span style="padding:9px 14px; font-size:13.5px; font-weight:${on?'620':'520'}; color:var(--p-${on?'fg':'muted'}); border-bottom:2px solid ${on?'var(--p-primary)':'transparent'}; margin-bottom:-1px;">${t} <span class="u-faint u-num">${n}</span></span>`).join('')}
+    </div>
+
+    <div class="col gap12">
+      ${[
+        ['photo--c','Hyundai Tucson 2023','31 Jul – 3 Aug 2026','Nasr City, Cairo','$434.60','pend','Pending','View request'],
+        ['photo--a','Toyota Corolla 2022','12 Aug – 14 Aug 2026','Maadi, Cairo','$198.30','conf','Confirmed','View booking'],
+      ].map(([v,n,d,c,p,st,stl,cta])=>`
+      <div class="card row gap16" style="padding:14px;">
+        <div style="width:128px; height:80px; border-radius:9px; overflow:hidden; flex:none;">${photo(v)}</div>
+        <div class="col gap4 grow">
+          <div class="row gap10"><span style="font-weight:620;">${n}</span><span class="pill pill--${st}"><i></i>${stl}</span></div>
+          <span class="u-muted" style="font-size:13px;">${d}</span>
+          <span class="u-faint row gap5" style="font-size:12.5px;">${ico(I.pin,13)} ${c}</span>
+        </div>
+        <div class="col gap6" style="align-items:flex-end;">
+          <span class="u-num" style="font-weight:640; font-size:15px;">${p}</span>
+          <button class="btn btn--outline btn--sm">${cta}</button>
+        </div>
+      </div>`).join('')}
+
+      <div class="card col gap12" style="padding:34px; align-items:center; text-align:center; border-style:dashed;">
+        <span class="u-faint">${ico(I.car,30)}</span>
+        <div class="col gap3">
+          <h3>Nothing else booked yet</h3>
+          <p class="u-muted" style="font-size:13px; max-width:36ch;">When you book a car it shows up here with everything you need for pick-up day.</p>
+        </div>
+        <button class="btn btn--primary btn--sm">Find a car</button>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b>Tabs are client-side groupings of one query.</b> <code class="mono">GET /api/bookings?renterId={me}</code> returns everything; Upcoming = <code class="mono">Pending|Confirmed</code>, Active = <code class="mono">InProgress</code>, Past = <code class="mono">Completed|Cancelled</code>.`,
+`<b>Rows carry a car thumbnail the API doesn't return.</b> <code class="mono">BookingDto</code> has make/model/year/colour/city but no image, so rows either resolve the photo lazily per car or fall back to the placeholder shown here.`,
+`<b>The empty state sits inside the list</b>, not instead of it — you can have two upcoming trips and still be invited to book another.`]);
+
+/* ─────────────────────────── 7. AUTH ─────────────────────────── */
+S('Auth','Sign in &amp; register','Split screen. The register form teaches the password rules before the server has a chance to reject them.','/register',`
+<div class="ui">
+  <div style="display:grid; grid-template-columns:1fr 1.05fr; min-height:600px;">
+    <div style="position:relative; padding:40px; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(165deg,var(--p-primary-soft),var(--p-subtle));">
+      <span class="logo"><span class="logo__mark">${ico(I.car,15)}</span>CarRental</span>
+      <div style="position:absolute; inset:auto 0 30% 0; opacity:.28; color:var(--p-primary); display:grid; place-items:center;">
+        <div style="width:70%;">${CAR_SVG}</div>
+      </div>
+      <div class="col gap10" style="position:relative;">
+        <h2 style="font-size:23px; letter-spacing:-.02em; max-width:22ch;">Every car on the platform belongs to a verified owner.</h2>
+        <p class="u-muted" style="font-size:13.5px; max-width:38ch;">Licence and ID checks on both sides, and a photographed handover at pick-up and return.</p>
+      </div>
+    </div>
+
+    <div style="padding:44px 56px; display:flex; flex-direction:column; justify-content:center;">
+      <div style="max-width:400px; width:100%;">
+        <div class="col gap6" style="margin-bottom:22px;">
+          <h1>Create your account</h1>
+          <p class="u-muted" style="font-size:13.5px;">Already have one? <a href="#" style="color:var(--p-primary); font-weight:590; text-decoration:none;">Sign in</a></p>
+        </div>
+
+        <div class="col gap16">
+          <div class="col gap8">
+            <span class="field__label">I'm here to…</span>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div class="card col gap5" style="padding:13px; border-color:var(--p-primary); background:var(--p-primary-soft);">
+                <span style="color:var(--p-primary-ink);">${ico(I.search,18)}</span>
+                <span style="font-weight:620; font-size:13.5px;">Rent a car</span>
+                <span class="u-muted" style="font-size:11.5px;">Book cars near me</span>
+              </div>
+              <div class="card col gap5" style="padding:13px;">
+                <span class="u-faint">${ico(I.car,18)}</span>
+                <span style="font-weight:620; font-size:13.5px;">List my car</span>
+                <span class="u-muted" style="font-size:11.5px;">Earn from my car</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="field"><span class="field__label">First name</span><span class="input">Omar</span></div>
+            <div class="field"><span class="field__label">Last name</span><span class="input">Abbas</span></div>
+          </div>
+
+          <div class="field">
+            <span class="field__label">Email</span>
+            <span class="input input--focus">omar@example.com</span>
+          </div>
+
+          <div class="field">
+            <span class="field__label">Password</span>
+            <span class="input">••••••••••</span>
+            <div class="row row--wrap gap10" style="margin-top:2px;">
+              ${[['8+ characters',1],['Uppercase',1],['Lowercase',1],['Number',1],['Special character',0]].map(([r,ok])=>`
+                <span class="row gap5" style="font-size:11.5px; color:var(--${ok?'p-primary':'p-faint'});">
+                  <span style="width:13px;height:13px;border-radius:50%;border:1.4px solid currentColor;display:grid;place-items:center;">${ok?ico(I.check,8):''}</span>${r}</span>`).join('')}
+            </div>
+          </div>
+
+          <button class="btn btn--primary btn--lg btn--block">Create account</button>
+
+          <div class="toast" style="border-color:var(--st-pend-fg); background:var(--st-pend-bg); max-width:none;">
+            <span class="toast__ic" style="background:var(--st-pend-fg); color:var(--p-surface);">!</span>
+            <div class="col gap2">
+              <span style="font-weight:600; font-size:13px; color:var(--st-pend-fg);">Too many attempts</span>
+              <span style="font-size:12.5px; color:var(--st-pend-fg); opacity:.85;">Wait about a minute before trying again.</span>
+            </div>
+          </div>
+
+          <p class="hint" style="text-align:center;">By continuing you agree to the terms and privacy policy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b>The password checklist is the server's FluentValidation rule, live.</b> ≥8 chars, upper, lower, digit, and one special from the backend's allowed set — so a user never submits a password the API will reject.`,
+`<b>The role cards write <code class="mono">UserRole</code> as an integer</b> — Renter <code class="mono">0</code>, Owner <code class="mono">1</code>. Enums serialise as ints in request bodies; sending <code class="mono">"Owner"</code> would 400.`,
+`<b class="warn">The rate-limit state is designed, not discovered.</b> <code class="mono">/api/auth/*</code> allows 5 requests per minute <i>shared across all four routes</i>, so login, register, refresh and logout compete for the same budget. The submit button disables during flight and there is no auto-retry.`,
+`<b>Register uses <code class="mono">/api/auth/register</code></b>, not <code class="mono">POST /api/users</code> — the latter skips the strong-password policy and returns no token.`,
+`<b>Sign-in failures show "Email or password is incorrect"</b>, mapped client-side. The backend returns a bare 500 with a generic body for bad credentials, so the message has to come from the operation context.`]);
+
+/* ─────────────────────────── 8. VERIFICATION ─────────────────────────── */
+S('Auth','Account &amp; verification','Three documents, three independent statuses. The card explains why it matters instead of just demanding files.','/account/verification',`
+<div class="ui">
+  ${nav('')}
+  <div style="padding:26px; max-width:940px; margin:0 auto;">
+    <div class="row gap4" style="margin-bottom:22px; border-bottom:1px solid var(--p-line);">
+      ${[['Profile',0],['Verification',1],['Security',0]].map(([t,on])=>`
+        <span style="padding:9px 14px; font-size:13.5px; font-weight:${on?'620':'520'}; color:var(--p-${on?'fg':'muted'}); border-bottom:2px solid ${on?'var(--p-primary)':'transparent'}; margin-bottom:-1px;">${t}</span>`).join('')}
+    </div>
+
+    <div class="col gap6" style="margin-bottom:20px;">
+      <h1>Verification</h1>
+      <p class="u-muted" style="max-width:60ch;">Owners can see whether you're verified before they accept a booking. Documents are reviewed by our team, usually within a day.</p>
+    </div>
+
+    <div class="card card--pad row gap14" style="margin-bottom:18px; background:var(--p-subtle); border:0;">
+      <span class="u-faint">${ico(I.shield,22)}</span>
+      <div class="col gap3 grow">
+        <h3>1 of 3 documents approved</h3>
+        <div style="height:5px; border-radius:3px; background:var(--p-subtle-2); overflow:hidden; margin-top:5px;"><i style="display:block; height:100%; width:33%; background:var(--p-primary);"></i></div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+      <div class="card card--pad col gap12">
+        <div class="row row--between"><h3>Licence — front</h3><span class="pill pill--conf"><i></i>Verified</span></div>
+        <div style="aspect-ratio:16/10; border-radius:9px; overflow:hidden;">${photo('photo--b')}</div>
+        <span class="hint">Approved 26 Jul 2026</span>
+        <button class="btn btn--outline btn--sm btn--block">Replace</button>
+      </div>
+
+      <div class="card card--pad col gap12">
+        <div class="row row--between"><h3>Licence — back</h3><span class="pill pill--pend"><i></i>In review</span></div>
+        <div style="aspect-ratio:16/10; border-radius:9px; overflow:hidden;">${photo('photo--e')}</div>
+        <span class="hint">Uploaded today · usually reviewed within 24h</span>
+        <button class="btn btn--outline btn--sm btn--block is-disabled">Replace</button>
+      </div>
+
+      <div class="card card--pad col gap12">
+        <div class="row row--between"><h3>Government ID</h3><span class="pill pill--canc"><i></i>Rejected</span></div>
+        <div class="upload" style="aspect-ratio:16/10; justify-content:center;">
+          <span class="u-faint">${ico(I.up,22)}</span>
+          <span style="font-size:12.5px; font-weight:590; color:var(--p-fg);">Drop a photo, or browse</span>
+          <span style="font-size:11.5px;">JPG or PNG, all four corners visible</span>
+        </div>
+        <span class="hint hint--err">The last upload was too blurry to read. Try again in better light.</span>
+        <div class="field"><span class="field__label">ID type</span><span class="input" style="min-height:34px; font-size:13px;">National ID ▾</span></div>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b>Three tiles, three statuses</b> — but the backend collapses licence front and back into a single <code class="mono">DriverLicenseStatus</code>. The UI mirrors that: approving either side flips both tiles together.`,
+`<b>Uploads are <code class="mono">multipart/form-data</code> to <code class="mono">POST /api/users/{id}/verification</code></b> with <code class="mono">File</code>, <code class="mono">Type</code>, and <code class="mono">IdType</code>. The response is a Cloudinary URL, which is what the preview renders.`,
+`<b class="warn">The rejection reason shown here is UI-only.</b> The backend accepts a <code class="mono">reason</code> on review but never persists it — so either the field gets stored, or this copy stays generic. Flagged for the API.`,
+`<b>No file validation exists server-side.</b> Size and MIME checks happen client-side before upload, or a large file becomes a 500.`]);
+
+/* ─────────────────────────── 9. OWNER DASHBOARD ─────────────────────────── */
+S('Owner','Owner dashboard','Summary before detail. What needs attention today sits above the numbers.','/owner',`
+<div class="ui">
+  ${nav('host')}
+  <div style="display:flex; min-height:560px;">
+    <aside class="side">
+      <span class="side__label">Owner</span>
+      <a href="#" class="is-active">${ico(I.grid,16)} Dashboard</a>
+      <a href="#">${ico(I.car,16)} My cars <span class="u-faint u-num" style="margin-left:auto;">3</span></a>
+      <a href="#">${ico(I.list,16)} Bookings <span class="pill pill--pend" style="margin-left:auto; padding:1px 7px; font-size:10.5px;">2</span></a>
+      <a href="#">${ico(I.cal,16)} Availability</a>
+      <span class="side__label">Account</span>
+      <a href="#">${ico(I.user,16)} Profile</a>
+      <a href="#">${ico(I.shield,16)} Verification</a>
+    </aside>
+
+    <div class="sec grow">
+      <div class="row row--between">
+        <div class="col gap3">
+          <h1>Good afternoon, Mostafa</h1>
+          <p class="u-muted">Two requests are waiting on you.</p>
+        </div>
+        <button class="btn btn--primary">${ico(I.plus,15)} List a car</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px;">
+        <div class="stat"><div class="stat__k">Active listings</div><div class="stat__v">3</div><div class="stat__d">1 unavailable</div></div>
+        <div class="stat"><div class="stat__k">Upcoming trips</div><div class="stat__v">4</div><div class="stat__d">next in 3 days</div></div>
+        <div class="stat"><div class="stat__k">Trips completed</div><div class="stat__v">62</div><div class="stat__d"><b>+5</b> this month</div></div>
+        <div class="stat"><div class="stat__k">Estimated earnings</div><div class="stat__v">$1,284</div><div class="stat__d">this month, before fees</div></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:18px; align-items:start;">
+        <div class="card">
+          <div class="row row--between" style="padding:16px 18px;">
+            <h3>Needs your attention</h3>
+            <a href="#" style="color:var(--p-primary); font-size:12.5px; text-decoration:none; font-weight:590;">All bookings →</a>
+          </div>
+          <hr class="divider">
+          ${[
+            ['photo--c','Hyundai Tucson','Sara M. · 31 Jul – 3 Aug','pend','New request','Review'],
+            ['photo--a','Toyota Corolla','Ahmed K. · 29 Jul – 1 Aug','conf','Pick-up tomorrow','Start trip'],
+            ['photo--f','Jeep Compass','Nour A. · 24 Jul – 28 Jul','prog','Due back today','End trip'],
+          ].map(([v,car,who,st,stl,cta])=>`
+          <div class="row gap12" style="padding:13px 18px; border-bottom:1px solid var(--p-line);">
+            <div style="width:62px; height:42px; border-radius:7px; overflow:hidden; flex:none;">${photo(v)}</div>
+            <div class="col gap3 grow">
+              <span style="font-weight:590; font-size:13.5px;">${car}</span>
+              <span class="u-muted" style="font-size:12.5px;">${who}</span>
+            </div>
+            <span class="pill pill--${st}"><i></i>${stl}</span>
+            <button class="btn btn--outline btn--sm">${cta}</button>
+          </div>`).join('')}
+        </div>
+
+        <div class="card">
+          <div style="padding:16px 18px;"><h3>Today</h3></div>
+          <hr class="divider">
+          <div class="col" style="padding:16px 18px; gap:16px;">
+            <div class="row gap12">
+              <div class="col" style="align-items:center; width:44px; flex:none;">
+                <span class="u-num" style="font-size:15px; font-weight:640;">10:00</span>
+                <span class="u-faint" style="font-size:10.5px;">PICK-UP</span>
+              </div>
+              <div style="width:2px; background:var(--p-primary); border-radius:2px; align-self:stretch;"></div>
+              <div class="col gap2 grow"><span style="font-weight:590; font-size:13.5px;">Kia Sportage</span><span class="u-muted" style="font-size:12.5px;">Youssef T. · 4 days</span></div>
+            </div>
+            <div class="row gap12">
+              <div class="col" style="align-items:center; width:44px; flex:none;">
+                <span class="u-num" style="font-size:15px; font-weight:640;">18:00</span>
+                <span class="u-faint" style="font-size:10.5px;">RETURN</span>
+              </div>
+              <div style="width:2px; background:var(--p-line-strong); border-radius:2px; align-self:stretch;"></div>
+              <div class="col gap2 grow"><span style="font-weight:590; font-size:13.5px;">Jeep Compass</span><span class="u-muted" style="font-size:12.5px;">Nour A. · inspection due</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b>Every number here is derived client-side</b> from <code class="mono">GET /api/bookings?ownerId={me}</code> plus the owner's cars. There is no analytics endpoint, and earnings are explicitly labelled "estimated, before fees" rather than implying a settled figure.`,
+`<b class="warn">There is no <code class="mono">GET /api/cars?ownerId=</code>.</b> Until one exists, the owner's listings come from the unpaginated <code class="mono">GET /api/cars</code> filtered client-side — workable at demo scale, flagged as the first backend fix.`,
+`<b>State is encoded in form and colour, not just text</b> — the pill shape reads at a glance before the label is read.`,
+`<b>"Needs your attention" is ordered by urgency, not date</b>: overdue returns, then today's pick-ups, then new requests.`]);
+
+/* ─────────────────────────── 10. ADD CAR WIZARD ─────────────────────────── */
+S('Owner','List a car','Four steps, because thirty fields on one page is how you lose an owner halfway through.','/owner/cars/new',`
+<div class="ui">
+  ${nav('host')}
+  <div style="padding:26px; max-width:900px; margin:0 auto;">
+    <div class="row row--between" style="margin-bottom:22px;">
+      <div class="stepper">
+        <span class="stepper__i is-done"><span class="stepper__n">${ico(I.check,11)}</span>Basics</span><span class="stepper__line"></span>
+        <span class="stepper__i is-now"><span class="stepper__n">2</span>Specs &amp; features</span><span class="stepper__line"></span>
+        <span class="stepper__i"><span class="stepper__n">3</span>Location &amp; price</span><span class="stepper__line"></span>
+        <span class="stepper__i"><span class="stepper__n">4</span>Photos</span>
+      </div>
+      <span class="u-faint" style="font-size:12px;">Draft saved</span>
+    </div>
+
+    <div class="col gap6" style="margin-bottom:20px;">
+      <h1>Tell us about the car</h1>
+      <p class="u-muted">This is what renters compare when they're deciding.</p>
+    </div>
+
+    <div class="card card--pad col gap20" style="margin-bottom:18px;">
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+        <div class="field"><span class="field__label">Transmission</span><span class="input">Automatic ▾</span></div>
+        <div class="field"><span class="field__label">Fuel</span><span class="input">Diesel ▾</span></div>
+        <div class="field"><span class="field__label">Category</span><span class="input">SUV ▾</span></div>
+        <div class="field"><span class="field__label">Seats</span><span class="input u-num">5</span></div>
+        <div class="field"><span class="field__label">Doors</span><span class="input u-num">4</span></div>
+        <div class="field"><span class="field__label">Odometer (km)</span><span class="input u-num">62400</span></div>
+      </div>
+
+      <div class="field">
+        <span class="field__label">VIN</span>
+        <span class="input input--err mono" style="letter-spacing:.06em;">KMHJ381AFNU04421</span>
+        <span class="hint hint--err">16 of 17 characters. VINs never contain I, O or Q.</span>
+      </div>
+
+      <div class="col gap10">
+        <span class="field__label">Features</span>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+          ${[['Air conditioning',1],['Bluetooth',1],['USB charging',1],['Backup camera',1],['GPS',0],['Child seat',0]].map(([f,on])=>`
+          <div class="card row gap10" style="padding:11px 13px; ${on?'border-color:var(--p-primary); background:var(--p-primary-soft);':''}">
+            <span style="width:16px;height:16px;border-radius:5px;border:1.5px solid ${on?'var(--p-primary)':'var(--p-line-strong)'};background:${on?'var(--p-primary)':'transparent'};color:var(--p-primary-fg);display:grid;place-items:center;flex:none;">${on?ico(I.check,10):''}</span>
+            <span style="font-size:13px; ${on?'font-weight:590;':'color:var(--p-muted);'}">${f}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--pad col gap14" style="margin-bottom:18px; opacity:.55;">
+      <div class="row row--between">
+        <h3>Step 4 — Photos</h3>
+        <span class="u-faint" style="font-size:12px;">Uploads start once the listing is created</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
+        <div style="aspect-ratio:4/3; border-radius:9px; overflow:hidden; position:relative;">${photo('photo--c')}
+          <span class="pill" style="position:absolute; left:7px; top:7px; background:var(--p-primary); color:var(--p-primary-fg); font-size:10px; padding:2px 8px;">Cover</span>
+        </div>
+        <div style="aspect-ratio:4/3; border-radius:9px; overflow:hidden;">${photo('photo--a')}</div>
+        <div style="aspect-ratio:4/3; border-radius:9px; overflow:hidden;">${photo('photo--f')}</div>
+        <div class="upload" style="aspect-ratio:4/3; justify-content:center; padding:12px;">
+          <span class="u-faint">${ico(I.up,20)}</span><span style="font-size:12px;">Add photos</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row row--between">
+      <button class="btn btn--ghost">← Back</button>
+      <div class="row gap10">
+        <button class="btn btn--outline">Save draft</button>
+        <button class="btn btn--primary">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b>Photos are step four for a reason.</b> <code class="mono">POST /api/cars/{id}/images</code> needs a car ID, which doesn't exist until the listing is created — so the wizard creates the car, then uploads, then marks the cover image.`,
+`<b>VIN validation runs on every keystroke</b>: exactly 17 characters, uppercase, no I/O/Q — mirroring the server regex. Same for year (1900 → next year), seats (1–20), doors (1–10), and price per day (> 0).`,
+`<b>The draft persists in local storage between steps</b>, so a refresh at step three doesn't cost the owner ten minutes of typing.`,
+`<b>Selects write integers.</b> Transmission, fuel, and category are enums serialised as ints in the request body; the labels here are display-only.`,
+`<b>Every error message says what to do</b> — "16 of 17 characters", not "Invalid VIN".`]);
+
+/* ─────────────────────────── 11. OWNER BOOKINGS ─────────────────────────── */
+S('Owner','Booking inbox','A dense table because owners scan it, plus a detail panel with the one action that status allows.','/owner/bookings',`
+<div class="ui">
+  ${nav('host')}
+  <div style="display:flex; min-height:560px;">
+    <aside class="side">
+      <span class="side__label">Owner</span>
+      <a href="#">${ico(I.grid,16)} Dashboard</a>
+      <a href="#">${ico(I.car,16)} My cars <span class="u-faint u-num" style="margin-left:auto;">3</span></a>
+      <a href="#" class="is-active">${ico(I.list,16)} Bookings <span class="pill pill--pend" style="margin-left:auto; padding:1px 7px; font-size:10.5px;">2</span></a>
+      <a href="#">${ico(I.cal,16)} Availability</a>
+    </aside>
+
+    <div class="sec grow">
+      <div class="row row--between">
+        <h1>Bookings</h1>
+        <div class="row gap8">
+          <span class="input" style="min-height:34px; padding:6px 11px; font-size:12.5px;">All cars ▾</span>
+          <span class="input" style="min-height:34px; padding:6px 11px; font-size:12.5px;">Any status ▾</span>
+        </div>
+      </div>
+
+      <div class="row gap6">
+        ${[['All',12,1],['Pending',2,0],['Confirmed',3,0],['In progress',1,0],['Completed',6,0]].map(([t,n,on])=>`<span class="chip ${on?'is-on':''}" style="padding:5px 12px; font-size:12.5px;">${t} <span class="u-faint u-num">${n}</span></span>`).join('')}
+      </div>
+
+      <div class="card" style="overflow:hidden;">
+        <div style="overflow-x:auto;">
+        <table class="tbl">
+          <thead><tr>
+            <th style="padding-left:18px;">Booking</th><th>Renter</th><th>Car</th><th>Dates</th><th>Days</th><th>Total</th><th>Status</th><th style="padding-right:18px;"></th>
+          </tr></thead>
+          <tbody>
+          ${[
+            ['7C2B41','Sara M.','Hyundai Tucson','31 Jul – 3 Aug','3','$434.60','pend','Pending','Start trip',1],
+            ['4A81D0','Ahmed K.','Toyota Corolla','29 Jul – 1 Aug','3','$198.30','conf','Confirmed','Start trip',0],
+            ['9E30B7','Nour A.','Jeep Compass','24 Jul – 28 Jul','4','$512.00','prog','In progress','End trip',0],
+            ['2F55C9','Youssef T.','Kia Sportage','12 Jul – 15 Jul','3','$389.40','done','Completed','View',0],
+            ['6B1A88','Mona R.','Hyundai Tucson','2 Jul – 4 Jul','2','$298.10','canc','Cancelled','View',0],
+          ].map(([id,who,car,dates,days,total,st,stl,cta,sel])=>`
+            <tr style="${sel?'background:var(--p-subtle);':''}">
+              <td style="padding-left:18px;"><b class="mono" style="font-size:12px;">#${id}</b></td>
+              <td>${who}</td>
+              <td class="u-muted">${car}</td>
+              <td class="u-muted">${dates}</td>
+              <td class="u-num u-muted">${days}</td>
+              <td class="u-num"><b>${total}</b></td>
+              <td><span class="pill pill--${st}"><i></i>${stl}</span></td>
+              <td style="padding-right:18px; text-align:right;"><button class="btn btn--outline btn--sm">${cta}</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="card card--pad col gap16" style="max-width:560px;">
+        <div class="row row--between">
+          <div class="col gap3"><h3>Booking #7C2B41</h3><span class="u-muted" style="font-size:12.5px;">Requested 28 Jul, 14:32</span></div>
+          <span class="pill pill--pend"><i></i>Pending</span>
+        </div>
+        <hr class="divider">
+        <div class="row gap14">
+          <span class="avatar" style="width:40px;height:40px;font-size:13px;">SM</span>
+          <div class="col gap3 grow">
+            <div class="row gap8"><span style="font-weight:600;">Sara Mahmoud</span><span class="pill pill--conf"><i></i>Licence verified</span></div>
+            <span class="u-muted" style="font-size:12.5px;">4 previous trips · joined Mar 2026</span>
+          </div>
+        </div>
+        <div class="gapline">
+          <b>Accept / decline isn't wired yet.</b> The API has no endpoint that moves a booking from Pending to Confirmed — starting the trip is currently the only forward move.
+        </div>
+        <div class="row gap10">
+          <button class="btn btn--primary grow">Start trip &amp; inspect</button>
+          <button class="btn btn--outline is-disabled">Accept request</button>
+          <button class="btn btn--danger">Decline</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b class="warn">The missing transition is shown, not hidden.</b> The README documents "owner accepts" but no endpoint implements <code class="mono">Pending → Confirmed</code>. The design keeps the button visible and disabled with an explanation, so the gap is obvious to whoever builds the API next.`,
+`<b>The start-trip handler accepts <code class="mono">Pending</code> directly</b>, which is why that button is live on a pending row — the UI reflects what the code actually permits.`,
+`<b>One action per status.</b> Pending and Confirmed → Start trip; In progress → End trip; Completed and Cancelled → View only. Buttons that would 500 are never rendered.`,
+`<b>Numeric columns use tabular figures</b> so totals align down the column and are scannable.`]);
+
+/* ─────────────────────────── 12. INSPECTION ─────────────────────────── */
+S('Owner','Trip inspection','One form, two modes. This is the record that settles any argument about damage later.','/owner/bookings/9e30…b7/inspection',`
+<div class="ui">
+  ${nav('host')}
+  <div style="padding:26px; max-width:880px; margin:0 auto;">
+    <div class="row gap10" style="margin-bottom:8px;">
+      <span class="pill pill--prog"><i></i>In progress</span>
+      <span class="u-muted" style="font-size:13px;">Booking <span class="mono">#9E30B7</span> · Jeep Compass · Nour A.</span>
+    </div>
+    <div class="col gap6" style="margin-bottom:22px;">
+      <h1>Return inspection</h1>
+      <p class="u-muted">Record the car's condition with Nour present. Both of you should see the screen.</p>
+    </div>
+
+    <div class="card card--pad col gap20">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div class="field">
+          <span class="field__label">Returned at</span>
+          <span class="input">${ico(I.cal,15)} 28 Jul 2026 · 18:04</span>
+        </div>
+        <div class="field">
+          <span class="field__label">Odometer now (km)</span>
+          <span class="input input--focus u-num">63,240</span>
+          <span class="hint hint--ok">840 km driven · 1,000 km included over 4 days</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap12">
+        <div class="row row--between">
+          <span class="field__label">Fuel level</span>
+          <span class="u-num" style="font-weight:640;">75%</span>
+        </div>
+        <div class="slider"><i style="left:0; width:75%;"></i><b style="left:75%;"></b></div>
+        <div class="row row--between u-faint" style="font-size:11.5px;"><span>Empty</span><span>Full</span></div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap10">
+        <span class="field__label">Cleanliness</span>
+        <div class="row gap6">
+          ${[1,1,1,1,0].map(on=>`<span style="font-size:26px; line-height:1; color:var(--${on?'p-star':'p-line-strong'});">★</span>`).join('')}
+          <span class="u-muted" style="margin-left:8px; font-size:13px;">Clean — normal use</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap12">
+        <div class="row row--between">
+          <span class="field__label">Any damage?</span>
+          <div class="row" style="border:1px solid var(--p-line-strong); border-radius:8px; overflow:hidden;">
+            <span style="padding:6px 16px; font-size:12.5px; color:var(--p-muted);">No</span>
+            <span style="padding:6px 16px; font-size:12.5px; background:var(--st-canc-bg); color:var(--st-canc-fg); font-weight:600;">Yes</span>
+          </div>
+        </div>
+        <div class="field">
+          <span class="input" style="min-height:70px; align-items:flex-start; padding-top:10px;">Scuff on the rear passenger-side bumper, roughly 10 cm. Not present at pick-up.</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+          <div style="aspect-ratio:1; border-radius:9px; overflow:hidden;">${photo('photo--f')}</div>
+          <div style="aspect-ratio:1; border-radius:9px; overflow:hidden;">${photo('photo--b')}</div>
+          <div class="upload" style="aspect-ratio:1; justify-content:center; padding:8px; gap:4px;">
+            <span class="u-faint">${ico(I.cam,18)}</span><span style="font-size:11px;">Add photo</span>
+          </div>
+          <div></div><div></div>
+        </div>
+      </div>
+
+      <div class="card card--pad col gap8" style="background:var(--p-subtle); border:0;">
+        <div class="price-row"><span>Trip total</span><b>$512.00</b></div>
+        <div class="price-row"><span>Extra mileage</span><b>$0.00 — under the limit</b></div>
+        <hr class="divider">
+        <div class="price-total"><span>Final amount</span><b class="u-num">$512.00</b></div>
+      </div>
+
+      <div class="row row--between">
+        <button class="btn btn--ghost">Cancel</button>
+        <button class="btn btn--primary btn--lg">End trip &amp; return deposit</button>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b>One component, two modes.</b> Pickup and return post the same shape to <code class="mono">/start</code> and <code class="mono">/end</code>; only the odometer field name, the heading, and the button label differ.`,
+`<b class="warn">No server-side validation exists on this form.</b> Fuel 0–100 and cleanliness 1–5 are documented but unenforced — the client is the only thing stopping a fuel level of 900 from reaching the database.`,
+`<b class="warn">The extra-mileage line is currently always zero.</b> <code class="mono">MileageLimit</code> is never copied from the car onto the booking at creation, so the overage calculation can't fire. The row is designed and honest until that one-line backend fix lands.`,
+`<b>Photos upload to Cloudinary</b> like car images; the strip shows upload progress per tile rather than blocking the whole form.`,
+`<b>The screen is designed to be read by two people at once</b> — large touch targets, no hover-only affordances, one column on tablet.`]);
+
+/* ─────────────────────────── 13. ADMIN ─────────────────────────── */
+S('Admin','Verification queue','A work queue. The reviewer needs the document large, the decision one click away, and the next item queued.','/admin/verifications',`
+<div class="ui">
+  <div class="appbar">
+    <span class="logo"><span class="logo__mark">${ico(I.shield,15)}</span>CarRental <span class="pill" style="margin-left:4px;">Staff</span></span>
+    <div class="appbar__right"><span class="u-muted" style="font-size:13px;">Reviewer</span><span class="avatar">RS</span></div>
+  </div>
+
+  <div style="display:flex; min-height:580px;">
+    <aside class="side">
+      <span class="side__label">Review</span>
+      <a href="#" class="is-active">${ico(I.shield,16)} Verifications <span class="pill pill--pend" style="margin-left:auto; padding:1px 7px; font-size:10.5px;">7</span></a>
+      <a href="#">${ico(I.user,16)} Users</a>
+      <a href="#">${ico(I.car,16)} Listings</a>
+      <a href="#">${ico(I.list,16)} Bookings</a>
+    </aside>
+
+    <div class="sec grow" style="min-width:0;">
+      <div class="row row--between">
+        <div class="col gap3"><h1>Verifications</h1><p class="u-muted">7 documents waiting · oldest 2 days</p></div>
+        <span class="input" style="min-height:34px; padding:6px 11px; font-size:12.5px;">Oldest first ▾</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:20px; align-items:start;">
+        <div class="card" style="overflow:hidden;">
+          <div style="overflow-x:auto;">
+          <table class="tbl">
+            <thead><tr><th style="padding-left:18px;">User</th><th>Document</th><th>Waiting</th><th style="padding-right:18px;">Status</th></tr></thead>
+            <tbody>
+            ${[
+              ['Sara Mahmoud','sara.m@example.com','Government ID','2 days','pend','In review',1],
+              ['Ahmed Kamal','a.kamal@example.com','Licence — front','1 day','pend','In review',0],
+              ['Ahmed Kamal','a.kamal@example.com','Licence — back','1 day','pend','In review',0],
+              ['Nour Adel','nour@example.com','Government ID','6 hours','pend','In review',0],
+              ['Youssef Tarek','y.tarek@example.com','Licence — front','3 hours','pend','In review',0],
+            ].map(([n,e,d,w,st,stl,sel])=>`
+              <tr style="${sel?'background:var(--p-subtle);':''}">
+                <td style="padding-left:18px;">
+                  <div class="row gap10">
+                    <span class="avatar" style="width:28px;height:28px;font-size:11px;">${n.split(' ').map(x=>x[0]).join('')}</span>
+                    <span class="col"><b>${n}</b><span class="u-faint" style="font-size:11.5px;">${e}</span></span>
+                  </div>
+                </td>
+                <td class="u-muted">${d}</td>
+                <td class="u-muted">${w}</td>
+                <td style="padding-right:18px;"><span class="pill pill--${st}"><i></i>${stl}</span></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <div class="card card--pad col gap16">
+          <div class="row row--between">
+            <h3>Sara Mahmoud</h3>
+            <span class="u-faint" style="font-size:12px;">1 of 7</span>
+          </div>
+          <div class="col gap6">
+            <div class="row row--between"><span class="u-muted" style="font-size:12.5px;">Email</span><span style="font-size:12.5px;">sara.m@example.com</span></div>
+            <div class="row row--between"><span class="u-muted" style="font-size:12.5px;">Phone</span><span class="u-num" style="font-size:12.5px;">+20 100 555 0134</span></div>
+            <div class="row row--between"><span class="u-muted" style="font-size:12.5px;">Joined</span><span style="font-size:12.5px;">14 Mar 2026</span></div>
+            <div class="row row--between"><span class="u-muted" style="font-size:12.5px;">ID type</span><span style="font-size:12.5px;">National ID</span></div>
+            <div class="row row--between"><span class="u-muted" style="font-size:12.5px;">Licence expires</span><span style="font-size:12.5px;">09 Nov 2029</span></div>
+          </div>
+
+          <div style="aspect-ratio:16/10; border-radius:10px; overflow:hidden; position:relative;">
+            ${photo('photo--b')}
+            <span class="pill" style="position:absolute; right:8px; bottom:8px; background:rgba(8,14,13,.7); color:#fff; font-size:11px;">Open full size</span>
+          </div>
+
+          <div class="field">
+            <span class="field__label">Reason <span class="u-faint">(shown to the user if rejected)</span></span>
+            <span class="input input--ph" style="min-height:58px; align-items:flex-start; padding-top:9px; font-size:13px;">e.g. the number isn't legible — ask for a clearer photo</span>
+          </div>
+
+          <div class="row gap10">
+            <button class="btn btn--primary grow">${ico(I.check,15)} Approve</button>
+            <button class="btn btn--danger grow">Reject</button>
+          </div>
+          <span class="hint" style="text-align:center;">Approving jumps to the next document in the queue.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b>Built to be worked through, not browsed.</b> Approving advances to the next item automatically and keeps the reviewer's hands in one place — the counter ("1 of 7") sets the expectation.`,
+`<b>Rows are per document, not per user.</b> <code class="mono">GET /api/users/pending-verifications</code> returns a user with up to three document URLs and two statuses; the UI expands that into one reviewable row per outstanding document.`,
+`<b class="warn">The reason field is currently write-only.</b> <code class="mono">POST /api/users/{id}/process-verification</code> accepts <code class="mono">reason</code> and discards it — so the rejection message a user sees on their verification page can't yet be specific. Same flag as the Verification screen.`,
+`<b>Approving a licence flips both sides at once</b>, because the backend stores one <code class="mono">DriverLicenseStatus</code> for front and back combined.`]);
+
+/* ─────────────────────────── 14. MOBILE ─────────────────────────── */
+S('System','Mobile','The three screens that carry the most mobile traffic. Filters become a sheet; the booking panel becomes a fixed bar.','390px viewport',`
+<div class="phones">
+  <div>
+    <div class="phone">
+      <div class="phone__notch"><i></i></div>
+      <div class="ui ui--fluid">
+        <div style="padding:12px 14px; border-bottom:1px solid var(--p-line); display:flex; align-items:center; gap:10px;">
+          <span class="logo" style="font-size:14px;"><span class="logo__mark" style="width:22px;height:22px;">${ico(I.car,13)}</span></span>
+          <div class="input" style="flex:1; min-height:34px; padding:5px 11px; font-size:12px; border-radius:999px;">${ico(I.search,13)} Cairo · 31 Jul – 3 Aug</div>
+        </div>
+        <div style="padding:12px 14px; display:flex; flex-direction:column; gap:12px;">
+          <div class="row row--between">
+            <span style="font-weight:620; font-size:14px;">34 cars</span>
+            <span class="chip" style="padding:4px 12px; font-size:12px;">Filters <span class="pill" style="padding:0 6px; font-size:10px; background:var(--p-primary); color:var(--p-primary-fg);">3</span></span>
+          </div>
+          ${carcard('photo--c','Hyundai Tucson 2023','Automatic · Diesel','4.8','31','Nasr City','68','285')}
+          ${carcard('photo--a','Toyota RAV4 2022','Automatic · Petrol','4.9','52','Maadi','75','315')}
+        </div>
+      </div>
+    </div>
+    <p class="phone__label">Search — filters collapse to a sheet</p>
+  </div>
+
+  <div>
+    <div class="phone" style="position:relative;">
+      <div class="phone__notch"><i></i></div>
+      <div class="ui ui--fluid">
+        <div style="height:170px;">${photo('photo--c')}</div>
+        <div style="padding:14px; display:flex; flex-direction:column; gap:12px; padding-bottom:78px;">
+          <div class="col gap4">
+            <h2 style="font-size:17px;">Hyundai Tucson 2023</h2>
+            <div class="row gap8"><span class="star">★ 4.8</span><span class="u-muted" style="font-size:12px;">· 31 trips · Nasr City</span></div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            ${[[I.gear,'Automatic'],[I.fuel,'Diesel'],[I.seat,'5 seats'],[I.road,'250 km/day']].map(([d,v])=>`
+              <div class="card row gap8" style="padding:9px 11px;"><span class="u-faint">${ico(d,15)}</span><span style="font-size:12.5px; font-weight:560;">${v}</span></div>`).join('')}
+          </div>
+          <div class="row row--wrap gap6">
+            <span class="chip is-on" style="padding:4px 10px; font-size:11.5px;">A/C</span>
+            <span class="chip is-on" style="padding:4px 10px; font-size:11.5px;">Bluetooth</span>
+            <span class="chip is-on" style="padding:4px 10px; font-size:11.5px;">GPS</span>
+          </div>
+        </div>
+        <div style="position:absolute; left:0; right:0; bottom:0; background:var(--p-surface); border-top:1px solid var(--p-line); padding:11px 14px; display:flex; align-items:center; gap:12px;">
+          <div class="col gap1">
+            <span class="u-num" style="font-weight:660; font-size:16px;">$434.60</span>
+            <span class="u-faint" style="font-size:11px;">total · 3 days</span>
+          </div>
+          <button class="btn btn--primary" style="margin-left:auto;">Continue</button>
+        </div>
+      </div>
+    </div>
+    <p class="phone__label">Detail — sticky panel becomes a bottom bar</p>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="phone__notch"><i></i></div>
+      <div class="ui ui--fluid">
+        <div style="padding:14px;">
+          <h2 style="font-size:17px; margin-bottom:12px;">My trips</h2>
+          <div class="row gap4" style="border-bottom:1px solid var(--p-line); margin-bottom:14px;">
+            ${[['Upcoming',1],['Active',0],['Past',0]].map(([t,on])=>`<span style="padding:7px 11px; font-size:12.5px; font-weight:${on?'620':'520'}; color:var(--p-${on?'fg':'muted'}); border-bottom:2px solid ${on?'var(--p-primary)':'transparent'}; margin-bottom:-1px;">${t}</span>`).join('')}
+          </div>
+          <div class="col gap10">
+            ${[['photo--c','Hyundai Tucson','31 Jul – 3 Aug','pend','Pending'],['photo--a','Toyota Corolla','12 – 14 Aug','conf','Confirmed']].map(([v,n,d,st,stl])=>`
+            <div class="card col" style="overflow:hidden;">
+              <div style="height:96px;">${photo(v)}</div>
+              <div class="col gap5" style="padding:11px 12px;">
+                <div class="row row--between"><span style="font-weight:600; font-size:13.5px;">${n}</span><span class="pill pill--${st}"><i></i>${stl}</span></div>
+                <span class="u-muted" style="font-size:12px;">${d}</span>
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="phone__label">Trips — cards stack, photo leads</p>
+  </div>
+</div>`,[
+`<b>Mobile is where a rental app actually gets used</b> — at the kerb, one-handed, on a phone. The bottom bar keeps the price and the action in thumb reach at all times.`,
+`<b>The filter chip carries a count</b> so you know filters are active without opening the sheet.`,
+`<b>Trip cards lead with the photo on mobile</b> and with a thumbnail on desktop — same data, different scanning behaviour.`,
+`<b>Touch targets stay at 44px minimum</b>, and nothing depends on hover.`]);
+
+/* ─────────────────────────── 15. SYSTEM ─────────────────────────── */
+S('System','Design system','Tokens, components, and states. This is what gets translated into <code>globals.css</code> and shadcn theme variables on day one.','tailwind.config + globals.css',`
+<div class="ui ui--fluid">
+  <div class="sec">
+    <div class="col gap20">
+      <div class="col gap12">
+        <h2>Colour</h2>
+        <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:12px;">
+          ${[['Background','var(--p-bg)','--background'],['Surface subtle','var(--p-subtle)','--muted'],['Border','var(--p-line)','--border'],['Primary','var(--p-primary)','--primary'],['Primary soft','var(--p-primary-soft)','--primary/10'],['Foreground','var(--p-fg)','--foreground']]
+            .map(([n,c,t])=>`<div class="col gap6"><div class="swatch" style="background:${c};"></div><span style="font-size:12px; font-weight:590;">${n}</span><span class="mono u-faint" style="font-size:10.5px;">${t}</span></div>`).join('')}
+        </div>
+        <p class="u-muted" style="font-size:13px; max-width:70ch;">One accent — teal — used only for actions and active state. The neutrals are cooled slightly toward it rather than being pure grey, so the palette reads as one family. Status colours are semantic and separate; they never stand in for the accent.</p>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap12">
+        <h2>Booking status</h2>
+        <div class="row row--wrap gap10">
+          <span class="pill pill--pend"><i></i>Pending</span>
+          <span class="pill pill--conf"><i></i>Confirmed</span>
+          <span class="pill pill--prog"><i></i>In progress</span>
+          <span class="pill pill--done"><i></i>Completed</span>
+          <span class="pill pill--canc"><i></i>Cancelled</span>
+          <span class="pill pill--canc"><i></i>Disputed</span>
+        </div>
+        <p class="u-muted" style="font-size:13px;">Six states, matching <code class="mono">BookingStatus</code> 0–5 exactly. Shape plus colour plus label — never colour alone.</p>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap12">
+        <h2>Type scale</h2>
+        <div class="col gap10">
+          <div class="row gap20" style="align-items:baseline;"><span class="mono u-faint" style="width:96px; font-size:11px;">display / 40</span><span style="font-size:40px; font-weight:660; letter-spacing:-.03em;">Skip the counter</span></div>
+          <div class="row gap20" style="align-items:baseline;"><span class="mono u-faint" style="width:96px; font-size:11px;">h1 / 27</span><span style="font-size:27px; font-weight:660; letter-spacing:-.02em;">Hyundai Tucson 2023</span></div>
+          <div class="row gap20" style="align-items:baseline;"><span class="mono u-faint" style="width:96px; font-size:11px;">h2 / 19</span><span style="font-size:19px; font-weight:640;">Price details</span></div>
+          <div class="row gap20" style="align-items:baseline;"><span class="mono u-faint" style="width:96px; font-size:11px;">body / 14</span><span style="font-size:14px;">Return the car and your deposit is released.</span></div>
+          <div class="row gap20" style="align-items:baseline;"><span class="mono u-faint" style="width:96px; font-size:11px;">caption / 12.5</span><span style="font-size:12.5px;" class="u-muted">Usually reviewed within 24 hours</span></div>
+          <div class="row gap20" style="align-items:baseline;"><span class="mono u-faint" style="width:96px; font-size:11px;">label / 10.5</span><span class="label">PICK-UP</span></div>
+          <div class="row gap20" style="align-items:baseline;"><span class="mono u-faint" style="width:96px; font-size:11px;">numeric</span><span class="u-num" style="font-size:16px; font-weight:640;">$434.60 · 62,400 km</span></div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap12">
+        <h2>Buttons</h2>
+        <div class="row row--wrap gap10">
+          <button class="btn btn--primary">Primary</button>
+          <button class="btn btn--outline">Outline</button>
+          <button class="btn">Secondary</button>
+          <button class="btn btn--ghost">Ghost</button>
+          <button class="btn btn--danger">Destructive</button>
+          <button class="btn btn--primary is-disabled">Disabled</button>
+          <button class="btn btn--primary">
+            <span style="width:13px;height:13px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;"></span>
+            Working…
+          </button>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap12">
+        <h2>Field states</h2>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; max-width:900px;">
+          <div class="field"><span class="field__label">Default</span><span class="input input--ph">City</span></div>
+          <div class="field"><span class="field__label">Focus</span><span class="input input--focus">Cairo</span></div>
+          <div class="field"><span class="field__label">Error</span><span class="input input--err">KMHJ381AF</span><span class="hint hint--err">16 of 17 characters</span></div>
+          <div class="field"><span class="field__label">Loading</span><span class="input"><span class="sk" style="height:11px; width:60%;"></span></span></div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap12">
+        <h2>Feedback</h2>
+        <div class="row row--wrap gap14">
+          <div class="toast">
+            <span class="toast__ic" style="background:var(--p-primary); color:var(--p-primary-fg);">${ico(I.check,12)}</span>
+            <div class="col gap2"><span style="font-weight:600; font-size:13px;">Trip started</span><span class="u-muted" style="font-size:12.5px;">Nour has the keys. Due back 28 Jul, 18:00.</span></div>
+          </div>
+          <div class="toast" style="border-color:var(--st-canc-fg);">
+            <span class="toast__ic" style="background:var(--st-canc-bg); color:var(--st-canc-fg);">!</span>
+            <div class="col gap2"><span style="font-weight:600; font-size:13px;">Those dates were just taken</span><span class="u-muted" style="font-size:12.5px;">Someone booked this car while you were deciding. Try different dates.</span></div>
+          </div>
+        </div>
+        <p class="u-muted" style="font-size:13px; max-width:74ch;">The backend throws plain exceptions for business failures, so almost everything arrives as a bare 500 with a generic body. A <code class="mono">mapApiError(operation, status)</code> layer turns operation context into the messages above. No raw server text ever reaches a user, and no message apologises — it says what happened and what to do next.</p>
+      </div>
+
+      <hr class="divider">
+
+      <div class="col gap12">
+        <h2>Empty &amp; error</h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:820px;">
+          <div class="card col gap12" style="padding:28px; align-items:center; text-align:center; border-style:dashed;">
+            <span class="u-faint">${ico(I.search,26)}</span>
+            <div class="col gap3"><h3>No cars on these dates</h3><p class="u-muted" style="font-size:13px;">Nothing in Cairo is free from 31 Jul to 3 Aug with your filters.</p></div>
+            <div class="row gap8"><button class="btn btn--primary btn--sm">Widen the dates</button><button class="btn btn--outline btn--sm">Clear filters</button></div>
+          </div>
+          <div class="card col gap12" style="padding:28px; align-items:center; text-align:center;">
+            <span style="color:var(--st-canc-fg);">${ico(I.alert,26)}</span>
+            <div class="col gap3"><h3>We couldn't load this</h3><p class="u-muted" style="font-size:13px;">The connection dropped. Your filters are still saved.</p></div>
+            <button class="btn btn--outline btn--sm">Try again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`,[
+`<b>Tokens map 1:1 onto shadcn's CSS variables</b> — <code class="mono">--background</code>, <code class="mono">--foreground</code>, <code class="mono">--primary</code>, <code class="mono">--muted</code>, <code class="mono">--border</code>, <code class="mono">--radius</code> — so every installed component inherits the theme without per-component overrides.`,
+`<b>Dark mode is defined at token level only.</b> No component branches on theme; flipping <code class="mono">.dark</code> on <code class="mono">&lt;html&gt;</code> redefines the variables and the whole app follows.`,
+`<b>Numbers use tabular figures everywhere</b> — prices, odometers, day counts — so columns align and totals are comparable at a glance.`,
+`<b>Status colour is never the only signal.</b> Every pill carries a dot, a label, and a background; the design stays readable in greyscale and for colour-blind users.`,
+`<b>Components to install:</b> <code class="mono">button card input select calendar popover dialog sheet badge avatar tabs table dropdown-menu form label textarea checkbox slider separator skeleton sonner alert progress tooltip</code>.`]);
+
+/* ─────────────────────────── render ─────────────────────────── */
+const navEl = document.getElementById('nav');
+const stageEl = document.getElementById('stage');
+const rolesEl = document.getElementById('roles');
+const groups = {};
+SCREENS.forEach((s,i)=>{ (groups[s.group] ||= []).push({...s, i}); });
+
+/* ---- role walkthroughs ---- */
+const ROLES = [
+  {key:'All',    label:'All screens', groups:Object.keys(groups)},
+  {key:'Renter', label:'Renter',      groups:['Renter','Auth']},
+  {key:'Owner',  label:'Owner',       groups:['Owner','Auth']},
+  {key:'Admin',  label:'Admin',       groups:['Admin','Auth']},
+  {key:'System', label:'System',      groups:['System']},
+];
+let role = ROLES[0];
+
+/* screens in the current walkthrough, in presentation order */
+const reel = () => SCREENS
+  .map((s,i)=>({...s, i}))
+  .filter(s=>role.groups.includes(s.group))
+  .sort((a,b)=>role.groups.indexOf(a.group) - role.groups.indexOf(b.group) || a.i - b.i);
+
+rolesEl.innerHTML = ROLES.map(r=>{
+  const n = SCREENS.filter(s=>r.groups.includes(s.group)).length;
+  return `<button class="role" type="button" role="tab" data-role="${r.key}">${r.label}<span class="role__n">${n}</span></button>`;
+}).join('');
+
+function renderNav(){
+  const items = reel();
+  let html = '', lastGroup = null;
+  items.forEach((s, pos)=>{
+    if (s.group !== lastGroup){ html += `<span class="nav-group__label">${s.group}</span>`; lastGroup = s.group; }
+    html += `<button class="nav-item" type="button" data-i="${s.i}">`
+          + `<span class="nav-item__num">${String(pos+1).padStart(2,'0')}</span><span>${s.title}</span></button>`;
+  });
+  navEl.innerHTML = html;
+  navEl.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click', ()=>show(+b.dataset.i)));
+  rolesEl.querySelectorAll('.role').forEach(b=>{
+    const on = b.dataset.role === role.key;
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-selected', on);
+  });
+}
+
+stageEl.innerHTML = SCREENS.map((s,i)=>`
+<section class="screen" id="scr-${i}">
+  <header class="stage__head">
+    <p class="eyebrow">${s.group} · Screen ${String(i+1).padStart(2,'0')} of ${SCREENS.length}</p>
+    <h1 class="stage__title">${s.title}</h1>
+    <p class="stage__desc">${s.desc}</p>
+    <span class="route">Route <b class="mono">${s.route}</b></span>
+  </header>
+  ${s.route.includes('viewport') || s.route.includes('globals')
+    ? (s.group==='System' && s.title==='Mobile' ? s.html : `<div class="frame"><div class="frame__body">${s.html}</div></div>`)
+    : `<div class="frame">
+        <div class="frame__bar">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="frame__url mono">localhost:3000<b>${s.route}</b></span>
+        </div>
+        <div class="frame__body">${s.html}</div>
+      </div>`}
+  <div class="notes">
+    <p class="notes__title">Design decisions &amp; API constraints</p>
+    <ul>${s.notes.map(n=>`<li class="${n.includes('class="warn"')?'warn':''}">${n}</li>`).join('')}</ul>
+  </div>
+  <p class="swipe-hint">Swipe left or right to move through the walkthrough</p>
+</section>`).join('');
+
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const pagerLabel = document.getElementById('pagerLabel');
+const pagerDots = document.getElementById('pagerDots');
+let current = 0;   /* absolute index into SCREENS */
+
+function show(i){
+  const items = reel();
+  /* if the screen isn't in this walkthrough, widen to All rather than showing nothing */
+  if (!items.some(s=>s.i===i)){ role = ROLES[0]; renderNav(); }
+  current = i;
+
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('is-active'));
+  document.getElementById('scr-'+i).classList.add('is-active');
+  navEl.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('is-active', +b.dataset.i===i));
+
+  const list = reel();
+  const pos = list.findIndex(s=>s.i===i);
+  prevBtn.disabled = pos <= 0;
+  nextBtn.disabled = pos >= list.length - 1;
+  pagerLabel.innerHTML = `${role.key === 'All' ? '' : role.label + ' · '}<b>${pos+1}</b> / ${list.length}`;
+  pagerDots.innerHTML = list.map((s,p)=>
+    `<button class="pager__dot ${p===pos?'is-on':''}" type="button" data-i="${s.i}" aria-label="${s.title}"></button>`).join('');
+  pagerDots.querySelectorAll('.pager__dot').forEach(d=>d.addEventListener('click', ()=>show(+d.dataset.i)));
+
+  window.scrollTo({top:0, behavior:'instant'});
+  try { history.replaceState(null,'','#'+(i+1)); } catch (e) { /* sandboxed frame */ }
+}
+
+function step(dir){
+  const list = reel();
+  const pos = list.findIndex(s=>s.i===current);
+  const nextPos = pos + dir;
+  if (nextPos < 0 || nextPos >= list.length) return;
+  show(list[nextPos].i);
+}
+prevBtn.addEventListener('click', ()=>step(-1));
+nextBtn.addEventListener('click', ()=>step(1));
+
+/* role chips — jump to the first screen of that walkthrough */
+rolesEl.addEventListener('click', e=>{
+  const btn = e.target.closest('.role');
+  if (!btn) return;
+  role = ROLES.find(r=>r.key === btn.dataset.role);
+  renderNav();
+  const list = reel();
+  show(list.some(s=>s.i===current) ? current : list[0].i);
+});
+
+/* keyboard */
+document.addEventListener('keydown', e=>{
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (e.key === 'ArrowRight'){ e.preventDefault(); step(1); }
+  if (e.key === 'ArrowLeft'){ e.preventDefault(); step(-1); }
+});
+
+/* swipe — but never steal a gesture from a mockup that scrolls sideways itself */
+let sx = 0, sy = 0, swiping = false;
+const scrollsHorizontally = el => {
+  const box = el && el.closest && el.closest('.frame__body');
+  return !!box && box.scrollWidth > box.clientWidth + 4;
+};
+stageEl.addEventListener('touchstart', e=>{
+  if (e.touches.length !== 1 || scrollsHorizontally(e.target)) { swiping = false; return; }
+  sx = e.touches[0].clientX; sy = e.touches[0].clientY; swiping = true;
+}, {passive:true});
+stageEl.addEventListener('touchend', e=>{
+  if (!swiping) return;
+  swiping = false;
+  const dx = e.changedTouches[0].clientX - sx;
+  const dy = e.changedTouches[0].clientY - sy;
+  if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) step(dx < 0 ? 1 : -1);
+}, {passive:true});
+
+renderNav();
+const start = Math.min(Math.max(parseInt(location.hash.slice(1)) || 1, 1), SCREENS.length) - 1;
+show(start);
+
+/* theme toggle */
+const root = document.documentElement;
+document.getElementById('themeBtn').addEventListener('click', ()=>{
+  const isDark = root.getAttribute('data-theme') === 'dark'
+    || (!root.hasAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+});
+</script>
