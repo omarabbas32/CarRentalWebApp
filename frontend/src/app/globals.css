@@ -114,7 +114,11 @@
   --background: hsl(0 0% 100%);
   --foreground: hsl(168 24% 6%); /* near-black, cooled toward the accent */
   --muted: hsl(168 14% 96%);
-  --muted-foreground: hsl(170 6% 45%);
+  /* 42%, not the 45% originally specified. At 45% this measured 4.48:1 on the
+     page and 4.12:1 on `--muted` — both under AA, the second by a clear
+     margin. Secondary text carries prices, dates and every form hint, so it is
+     the last thing that should be borderline. `npm run verify:contrast`. */
+  --muted-foreground: hsl(170 6% 42%);
   --border: hsl(168 10% 90%);
   /* Stated as hex, not the spec's `175 76% 26%`: that triplet rounds to
      #10756C, two points off the named brand colour. The hex is exact. */

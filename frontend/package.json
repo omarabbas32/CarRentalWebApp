@@ -10,7 +10,8 @@
     "verify:logic": "tsx scripts/verify-logic.ts",
     "typecheck": "tsc --noEmit",
     "verify:client": "tsx scripts/verify-client.mts",
-    "verify": "npm run verify:logic && npm run verify:client",
+    "verify:contrast": "tsx scripts/verify-contrast.ts",
+    "verify": "npm run verify:logic && npm run verify:client && npm run verify:contrast",
     "verify:live": "tsx scripts/verify-live.mts"
   },
   "dependencies": {

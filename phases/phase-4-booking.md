@@ -93,15 +93,28 @@ never the only signal — it must read in greyscale and for colour-blind users.
 
 ## Done when
 
-- [ ] Checkout totals match the returned `BookingDto` to the cent.
-- [ ] A booking for taken dates surfaces a human message and a route back to search.
-- [ ] The timeline shows the correct stage; a cancelled booking shows a terminal state.
-- [ ] Cancel is absent — not disabled — on completed and cancelled bookings.
-- [ ] Cancelling with a reason moves the booking to `Cancelled` and the UI reflects it
-      without a manual refresh.
-- [ ] `/trips` tabs partition correctly and each has its own in-list empty state.
-- [ ] No refund amount appears anywhere.
-- [ ] Every date sent is UTC; no Npgsql `DateTimeKind` 500s.
+Verified against the running API in Phase 8 with `npm run verify:live`, which registers a
+throwaway renter, books the first car, and cancels it.
+
+- [x] Checkout totals match the returned `BookingDto` to the cent. *(live: the client quote
+      is compared component by component against the server's snapshot)*
+- [x] A booking for taken dates surfaces a human message and a route back to search.
+      *(live: the second booking is refused as a bare 500 and becomes "Those dates were just
+      taken. Try different dates.")*
+- [x] The timeline shows the correct stage; a cancelled booking shows a terminal state.
+      *(live: a new booking lands in `Pending`, and cancelling moves it to `Cancelled`;
+      `BOOKING_TIMELINE` excludes the terminal states, checked in `verify:logic`)*
+- [x] Cancel is absent — not disabled — on completed and cancelled bookings. *(live:
+      `canCancelBooking` is asserted false immediately after the cancel lands)*
+- [x] Cancelling with a reason moves the booking to `Cancelled` and the UI reflects it
+      without a manual refresh. *(live: status, `cancellationReason` and `cancelledAt` are
+      all read back; the UI refetches through `state.reload`)*
+- [x] `/trips` tabs partition correctly and each has its own in-list empty state.
+      *(`verify:logic` proves the partition is total and disjoint over every status)*
+- [x] No refund amount appears anywhere. *(no refund figure exists in the codebase — only
+      comments explaining why)*
+- [x] Every date sent is UTC; no Npgsql `DateTimeKind` 500s. *(live: the whole loop writes
+      dates and none returned a 500)*
 
 ---
 

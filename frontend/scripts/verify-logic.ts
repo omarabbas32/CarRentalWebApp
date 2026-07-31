@@ -16,10 +16,15 @@ import { priceBreakdown, breakdownFromBooking } from "@/lib/pricing";
 import { cloudinaryThumb, isCloudinaryUrl } from "@/lib/cloudinary";
 import { toFieldErrors, mapApiError, ApiError } from "@/lib/api/errors";
 import { isPasswordValid, passwordRuleResults, nameError, isEmailValid } from "@/lib/auth/password";
+import { buildReviewQueue, countPhantomRows } from "@/lib/verification-queue";
 import { validateImageFile, MAX_UPLOAD_BYTES } from "@/lib/uploads";
 import { canCancelBooking, isBookingParticipant, TRIP_TABS } from "@/lib/bookings";
+import { buildAttentionList, carIdsWithBookings, inboxAction, INBOX_TABS, ownerStats, renterLabel, todayTimeline } from "@/lib/owner";
+import { EMPTY_DRAFT, errorsForStep, normaliseVin, toCarInput, validateCarDraft, WIZARD_STEPS, type CarDraft } from "@/lib/car-form";
+import { clampCleanliness, clampFuel, inspectionModeFor, validateInspection } from "@/lib/inspection";
 import { safeNext } from "@/components/auth/redirect-if-authenticated";
-import { parseRoleName, parseCategoryName, carCategoryName, CarCategory, UserRole, BookingStatus, bookingStatusLabel, enumValues } from "@/lib/enums";
+import { parseRoleName, parseCategoryName, carCategoryName, CarCategory, UserRole, BookingStatus, bookingStatusLabel, enumValues, VerificationStatus, VerificationDocumentType, GovernmentIdType, governmentIdTypeLabel, TransmissionType, FuelType } from "@/lib/enums";
+import type { BookingDto } from "@/types/api";
 
 let passed = 0;
 const check = (name: string, fn: () => void) => {
@@ -159,6 +164,15 @@ check("403 and 404 carry operation-specific wording", () => {
   assert.equal(mapApiError("createBooking", 403), "Only renters can request a car.");
   assert.equal(mapApiError("getBooking", 404), "We couldn't find this booking.");
 });
+check("409 is the one status whose server message is shown, not replaced", () => {
+  // ConflictException carries text written for the user — "this car has 3
+  // bookings against it". `toApiError` passes it through; these are only the
+  // fallbacks for a body that couldn't be read.
+  assert.ok(new ApiError({ status: 409, operation: "deleteCar", message: "" }).isConflict);
+  assert.match(mapApiError("deleteCar", 409), /Turn off Listed/);
+  assert.match(mapApiError("uploadInspectionPhoto", 409), /start or end the trip first/);
+  assert.ok(!new ApiError({ status: 500, operation: "deleteCar", message: "" }).isConflict);
+});
 
 console.log("\nenums");
 check("role names map to the backend's ints", () => {
@@ -294,6 +308,377 @@ check("every message says what to do, not what is wrong", () => {
     const msg = validateImageFile(f);
     assert.ok(msg && !/^invalid/i.test(msg), `unhelpful message: ${msg}`);
   }
+});
+
+console.log("\nverification review queue");
+const row = (over: Partial<Record<string, unknown>> = {}) => ({
+  userId: "u1", fullName: "A B", email: "a@b.c",
+  governmentIdImageUrl: null, governmentIdType: null,
+  governmentIdStatus: VerificationStatus.Pending,
+  driverLicenseFrontImageUrl: null, driverLicenseBackImageUrl: null,
+  driverLicenseStatus: VerificationStatus.Pending,
+  driverLicenseExpiryDate: null,
+  ...over,
+} as Parameters<typeof buildReviewQueue>[0][number]);
+
+check("drops phantom rows — Pending is the enum default, not a real submission", () => {
+  // A brand-new UserVerification has both statuses at 0 (= Pending) with no
+  // images. The API's filter is status-only, so these arrive as reviewable.
+  const items = buildReviewQueue([row()], governmentIdTypeLabel);
+  assert.equal(items.length, 0, "nothing was actually uploaded");
+  assert.equal(countPhantomRows([row()]), 2, "and both are reported, not hidden");
+});
+check("a government ID with an image becomes one reviewable item", () => {
+  const items = buildReviewQueue(
+    [row({ governmentIdImageUrl: "https://x/id.png", governmentIdType: GovernmentIdType.Passport })],
+    governmentIdTypeLabel,
+  );
+  assert.equal(items.length, 1);
+  assert.equal(items[0].documentType, VerificationDocumentType.GovernmentId);
+  assert.equal(items[0].idTypeLabel, "Passport");
+  assert.equal(items[0].images.length, 1);
+});
+check("licence front and back are ONE decision carrying both images", () => {
+  // The backend stores a single DriverLicenseStatus and ProcessVerification
+  // flips DriverLicenseVerified from either side — so two rows would let a
+  // reviewer act twice on one decision, resolving the other invisibly.
+  const items = buildReviewQueue(
+    [row({
+      driverLicenseFrontImageUrl: "https://x/front.png",
+      driverLicenseBackImageUrl: "https://x/back.png",
+    })],
+    governmentIdTypeLabel,
+  );
+  assert.equal(items.length, 1);
+  assert.equal(items[0].images.length, 2);
+  assert.deepEqual(items[0].images.map((i) => i.label), ["Front", "Back"]);
+  assert.equal(items[0].documentType, VerificationDocumentType.DriverLicenseFront);
+});
+check("a licence with only one side uploaded is still reviewable", () => {
+  const items = buildReviewQueue(
+    [row({ driverLicenseFrontImageUrl: "https://x/front.png" })],
+    governmentIdTypeLabel,
+  );
+  assert.equal(items.length, 1);
+  assert.equal(items[0].images.length, 1);
+});
+check("already-decided documents leave the queue", () => {
+  const items = buildReviewQueue(
+    [row({
+      governmentIdImageUrl: "https://x/id.png",
+      governmentIdStatus: VerificationStatus.Verified,
+      driverLicenseFrontImageUrl: "https://x/front.png",
+      driverLicenseStatus: VerificationStatus.Rejected,
+    })],
+    governmentIdTypeLabel,
+  );
+  assert.equal(items.length, 0);
+});
+check("one user can contribute two items, each with a stable key", () => {
+  const items = buildReviewQueue(
+    [row({
+      governmentIdImageUrl: "https://x/id.png",
+      driverLicenseFrontImageUrl: "https://x/front.png",
+    })],
+    governmentIdTypeLabel,
+  );
+  assert.equal(items.length, 2);
+  assert.deepEqual(items.map((i) => i.key), ["u1:id", "u1:licence"]);
+});
+
+console.log("\nowner inbox");
+check("every status maps to exactly one action, and only to a live one", () => {
+  // Start accepts Pending or Confirmed; End accepts InProgress alone. Anything
+  // else has no handler that would take it, and a button there is a 500.
+  assert.equal(inboxAction(BookingStatus.Pending), "start");
+  assert.equal(inboxAction(BookingStatus.Confirmed), "start");
+  assert.equal(inboxAction(BookingStatus.InProgress), "end");
+  assert.equal(inboxAction(BookingStatus.Completed), "view");
+  assert.equal(inboxAction(BookingStatus.Cancelled), "view");
+  assert.equal(inboxAction(BookingStatus.Disputed), "view");
+});
+check("inbox tabs partition every status exactly once", () => {
+  const all = enumValues(BookingStatus);
+  for (const status of all) {
+    const matches = INBOX_TABS.filter((t) => t.statuses.includes(status));
+    assert.equal(matches.length, 1, `status ${status} matched ${matches.length} tabs`);
+  }
+  assert.equal(INBOX_TABS.flatMap((t) => [...t.statuses]).length, all.length);
+});
+check("renter labels are short and derived from the id alone", () => {
+  // BookingDto carries no renter name. A per-row GET /api/users/{id} would be
+  // an N+1 on a table built to be scanned.
+  assert.equal(renterLabel("a1b2c3d4-0000-0000-0000-000000000000"), "Renter a1b2c3d4");
+});
+
+console.log("\nowner dashboard");
+const booking = (over: Partial<BookingDto> = {}): BookingDto => ({
+  id: "b1", carId: "c1", carMake: "Toyota", carModel: "Corolla", carYear: 2022,
+  carColor: "Silver", carLocationCity: "Amman", carLocationState: "Amman",
+  renterId: "r1", ownerId: "o1",
+  startDate: "2026-08-01T10:00:00Z", endDate: "2026-08-04T10:00:00Z",
+  actualPickupDateTime: null, actualReturnDateTime: null,
+  pricePerDay: 100, totalDays: 3, subTotal: 300, serviceFee: 30, taxAmount: 15,
+  securityDeposit: 250, totalAmount: 595,
+  mileageLimit: null, startMileage: null, endMileage: null, totalMileage: null,
+  extraMileageCharge: null,
+  status: BookingStatus.Pending, cancelledAt: null, cancelledByUserId: null,
+  cancellationReason: null, createdAt: "2026-07-20T10:00:00Z",
+  ...over,
+});
+// Local noon, so "today" comparisons don't straddle a UTC date boundary.
+const noon = new Date(2026, 7, 1, 12, 0, 0);
+
+check("earnings count the subtotal of completed trips, not the total billed", () => {
+  // totalAmount includes the 10% fee, the 5% tax and a deposit that goes back
+  // to the renter. None of it is the owner's money.
+  const stats = ownerStats(
+    [
+      booking({ id: "1", status: BookingStatus.Completed, subTotal: 300, totalAmount: 595 }),
+      booking({ id: "2", status: BookingStatus.Completed, subTotal: 120, totalAmount: 300 }),
+      booking({ id: "3", status: BookingStatus.InProgress, subTotal: 999 }),
+    ],
+    noon,
+  );
+  assert.equal(stats.estimatedEarnings, 420, "in-progress trips are not earnings yet");
+});
+check("tiles count what their labels claim", () => {
+  const stats = ownerStats(
+    [
+      booking({ id: "1", status: BookingStatus.Pending, startDate: new Date(2026, 7, 20).toISOString() }),
+      booking({ id: "2", status: BookingStatus.InProgress, startDate: new Date(2026, 6, 25).toISOString() }),
+      booking({ id: "3", status: BookingStatus.Confirmed, startDate: new Date(2026, 7, 1, 9).toISOString() }),
+      booking({ id: "4", status: BookingStatus.Cancelled, startDate: new Date(2026, 7, 1, 9).toISOString() }),
+    ],
+    noon,
+  );
+  assert.equal(stats.newRequests, 1);
+  assert.equal(stats.tripsUnderWay, 1);
+  assert.equal(stats.pickupsToday, 1, "a cancelled booking is not a pick-up");
+});
+check("attention list is ordered by urgency, then by time", () => {
+  const items = buildAttentionList(
+    [
+      booking({ id: "request", status: BookingStatus.Pending, startDate: new Date(2026, 7, 20).toISOString() }),
+      booking({ id: "today", status: BookingStatus.Confirmed, startDate: new Date(2026, 7, 1, 16).toISOString() }),
+      booking({ id: "overdue-return", status: BookingStatus.InProgress, endDate: new Date(2026, 6, 30).toISOString() }),
+      booking({ id: "missed", status: BookingStatus.Confirmed, startDate: new Date(2026, 6, 29).toISOString() }),
+    ],
+    noon,
+  );
+  assert.deepEqual(
+    items.map((i) => i.booking.id),
+    ["overdue-return", "missed", "today", "request"],
+  );
+});
+check("a booking appears in the list at most once", () => {
+  // A pending booking due today is one job, not a request *and* a pick-up.
+  const due = booking({ status: BookingStatus.Pending, startDate: new Date(2026, 7, 1, 9).toISOString() });
+  const items = buildAttentionList([due], noon);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].kind, "pickup-today");
+});
+check("finished and future-confirmed bookings need nothing", () => {
+  const quiet = [
+    booking({ id: "1", status: BookingStatus.Completed }),
+    booking({ id: "2", status: BookingStatus.Cancelled }),
+    booking({ id: "3", status: BookingStatus.Confirmed, startDate: new Date(2026, 7, 20).toISOString() }),
+    booking({ id: "4", status: BookingStatus.InProgress, endDate: new Date(2026, 7, 20).toISOString() }),
+  ];
+  assert.equal(buildAttentionList(quiet, noon).length, 0);
+});
+check("today's timeline has both ends of a trip, in clock order", () => {
+  const events = todayTimeline(
+    [
+      booking({ id: "out", status: BookingStatus.Confirmed, startDate: new Date(2026, 7, 1, 15).toISOString() }),
+      booking({
+        id: "back", status: BookingStatus.InProgress,
+        startDate: new Date(2026, 6, 28).toISOString(),
+        endDate: new Date(2026, 7, 1, 9).toISOString(),
+      }),
+    ],
+    noon,
+  );
+  assert.deepEqual(events.map((e) => [e.booking.id, e.type]), [["back", "return"], ["out", "pickup"]]);
+  assert.equal(events[0].done, false, "done comes off the actual timestamp, not the clock");
+});
+check("deletable cars are the ones with no booking history at all", () => {
+  // Booking -> Car is OnDelete(Restrict), so the FK refuses the delete and the
+  // owner gets an unexplained 500.
+  const ids = carIdsWithBookings([
+    booking({ carId: "c1", status: BookingStatus.Cancelled }),
+    booking({ carId: "c2", status: BookingStatus.Completed }),
+  ]);
+  assert.ok(ids.has("c1"), "even a cancelled booking blocks the delete");
+  assert.ok(ids.has("c2"));
+  assert.equal(ids.has("c3"), false);
+});
+
+console.log("\ncar form (mirrors CreateCarCommandValidator)");
+const validDraft: CarDraft = {
+  ...EMPTY_DRAFT,
+  make: "Toyota", model: "Corolla", year: "2022", color: "Silver",
+  licensePlate: "ABC-1234", vin: "1HGBH41JXMN109186",
+  transmission: TransmissionType.Automatic, fuelType: FuelType.Petrol,
+  category: CarCategory.Compact,
+  seats: "5", doors: "4", mileage: "42000",
+  lat: "31.9539", lng: "35.9106",
+  locationAddress: "12 Rainbow St", locationCity: "Amman", locationState: "Amman",
+  pricePerDay: "45", securityDeposit: "200",
+};
+const at2026 = { now: new Date(2026, 0, 1) };
+
+check("a complete draft passes", () => {
+  assert.deepEqual(validateCarDraft(validDraft, at2026), {});
+});
+check("VIN rules match Length(17) + ^[A-HJ-NPR-Z0-9]*$", () => {
+  const vin = (v: string) => validateCarDraft({ ...validDraft, vin: v }, at2026).vin;
+  assert.equal(vin("1HGBH41JXMN109186"), undefined);
+  assert.match(vin("1HGBH41JXMN10918")!, /16 of 17/, "says how far off, not 'invalid'");
+  assert.match(vin("1HGBH41JXMN1091867")!, /18 of 17/);
+  assert.match(vin("1HGBH41JXMN10918O")!, /never contain I, O or Q/);
+  assert.match(vin("1HGBH41JXMN10918I")!, /never contain I, O or Q/);
+  assert.match(vin("1HGBH41JXMN10918Q")!, /never contain I, O or Q/);
+  assert.ok(vin(""), "required");
+});
+check("a VIN is normalised the way it is written down", () => {
+  // Copied off a document with separators, or typed on a phone keyboard.
+  assert.equal(normaliseVin("1hgbh41j-xmn 109186"), "1HGBH41JXMN109186");
+  assert.deepEqual(validateCarDraft({ ...validDraft, vin: "1hgbh41jxmn109186" }, at2026), {});
+});
+check("year spans 1900 to next year, like DateTime.Now.Year + 1", () => {
+  const year = (y: string) => validateCarDraft({ ...validDraft, year: y }, at2026).year;
+  assert.equal(year("1900"), undefined);
+  assert.equal(year("2027"), undefined, "next year's models are allowed");
+  assert.ok(year("1899"));
+  assert.ok(year("2028"));
+  assert.ok(year(""));
+});
+check("seats 1-20, doors 1-10, mileage >= 0, price > 0, deposit >= 0", () => {
+  const field = (over: Partial<CarDraft>) => validateCarDraft({ ...validDraft, ...over }, at2026);
+  assert.equal(field({ seats: "1" }).seats, undefined);
+  assert.equal(field({ seats: "20" }).seats, undefined);
+  assert.ok(field({ seats: "0" }).seats);
+  assert.ok(field({ seats: "21" }).seats);
+  assert.equal(field({ doors: "10" }).doors, undefined);
+  assert.ok(field({ doors: "11" }).doors);
+  assert.equal(field({ mileage: "0" }).mileage, undefined);
+  assert.ok(field({ mileage: "-1" }).mileage);
+  assert.ok(field({ pricePerDay: "0" }).pricePerDay, "GreaterThan(0), not >=");
+  assert.equal(field({ securityDeposit: "0" }).securityDeposit, undefined);
+  assert.ok(field({ securityDeposit: "-1" }).securityDeposit);
+});
+check("enums must be chosen, because 0 is a real value", () => {
+  // IsInEnum() passes for 0, so a pre-selected default would silently submit
+  // Manual / Petrol / Economy for an owner who never opened the field.
+  const errors = validateCarDraft(
+    { ...validDraft, transmission: null, fuelType: null, category: null },
+    at2026,
+  );
+  assert.ok(errors.transmission && errors.fuelType && errors.category);
+});
+check("coordinates are required and bounded — there is no geocoding endpoint", () => {
+  const field = (over: Partial<CarDraft>) => validateCarDraft({ ...validDraft, ...over }, at2026);
+  assert.ok(field({ lat: "" }).lat);
+  assert.ok(field({ lat: "91" }).lat);
+  assert.ok(field({ lng: "-181" }).lng);
+  assert.equal(field({ lat: "0", lng: "0" }).lat, undefined, "0,0 is valid, if unlikely");
+});
+check("the four unvalidated price fields stay optional but can't go negative", () => {
+  const field = (over: Partial<CarDraft>) => validateCarDraft({ ...validDraft, ...over }, at2026);
+  assert.deepEqual(field({ pricePerWeek: "", pricePerMonth: "", dailyMileageLimit: "", extraMileageCharge: "" }), {});
+  assert.ok(field({ pricePerWeek: "-1" }).pricePerWeek);
+  assert.ok(field({ extraMileageCharge: "-1" }).extraMileageCharge);
+});
+check("every message says what to do, not what is wrong", () => {
+  const messages = Object.values(validateCarDraft(EMPTY_DRAFT, at2026));
+  assert.ok(messages.length > 0);
+  for (const message of messages) {
+    assert.ok(!/^invalid/i.test(message!), `unhelpful message: ${message}`);
+    assert.ok(!/must not exceed|is required\./i.test(message!), `server wording leaked: ${message}`);
+  }
+});
+check("every validatable field belongs to exactly one wizard step", () => {
+  // A field owned by no step blocks submission with nothing highlighted
+  // anywhere; a field owned by two fails the same person twice.
+  const flagged = Object.keys(validateCarDraft(EMPTY_DRAFT, at2026));
+  for (const field of flagged) {
+    const steps = WIZARD_STEPS.filter((s) => (s.fields as readonly string[]).includes(field));
+    assert.equal(steps.length, 1, `${field} is owned by ${steps.length} steps`);
+  }
+});
+check("a step reports only its own errors, so a later step never blocks Next", () => {
+  const errors = validateCarDraft(EMPTY_DRAFT, at2026);
+  assert.ok(errorsForStep(errors, 0).make, "basics owns make");
+  assert.equal(errorsForStep(errors, 0).pricePerDay, undefined, "pricing does not");
+  assert.deepEqual(errorsForStep(errors, 3), {}, "photos has no fields");
+});
+check("toCarInput sends ints for enums and 0 for blank optionals", () => {
+  const input = toCarInput(validDraft);
+  assert.equal(input.transmission, 1, "Automatic = 1, as an int");
+  assert.equal(input.category, CarCategory.Compact);
+  assert.equal(input.pricePerWeek, 0, "blank means 0, which is what the API stores");
+  assert.deepEqual(input.location, { lat: 31.9539, lng: 35.9106 });
+  assert.equal(input.vin, "1HGBH41JXMN109186");
+});
+
+console.log("\ntrip inspection (the client is the only guard)");
+check("only Pending, Confirmed and InProgress reach a form", () => {
+  assert.equal(inspectionModeFor(BookingStatus.Pending), "pickup", "the start handler takes Pending");
+  assert.equal(inspectionModeFor(BookingStatus.Confirmed), "pickup");
+  assert.equal(inspectionModeFor(BookingStatus.InProgress), "return");
+  for (const status of [BookingStatus.Completed, BookingStatus.Cancelled, BookingStatus.Disputed]) {
+    assert.equal(inspectionModeFor(status), null);
+  }
+});
+check("fuel and cleanliness are clamped to their documented ranges", () => {
+  // Nothing on the server checks either. These comments in the domain —
+  // "// 0-100", "// 1-5" — are the whole specification.
+  assert.equal(clampFuel(-20), 0);
+  assert.equal(clampFuel(900), 100);
+  assert.equal(clampFuel(47.6), 48);
+  assert.equal(clampFuel(Number.NaN), 0);
+  assert.equal(clampCleanliness(0), 1);
+  assert.equal(clampCleanliness(9), 5);
+  assert.equal(clampCleanliness(Number.NaN), 1);
+});
+const inspection = (over = {}) => ({
+  mileage: "42100", fuelLevel: 60, cleanliness: 4,
+  hasDamage: false, damageDescription: "", at: "2026-08-01T14:30",
+  ...over,
+});
+check("a return reading below the pick-up reading is refused", () => {
+  const errors = validateInspection(inspection({ mileage: "41000" }), {
+    mode: "return",
+    startMileage: 42000,
+  });
+  assert.match(errors.mileage!, /42,000 km at pick-up/);
+  // Not a server rule — there is no server rule — but it makes TotalMileage
+  // negative, and that number is the record of the trip.
+  assert.deepEqual(
+    validateInspection(inspection({ mileage: "42100" }), { mode: "return", startMileage: 42000 }),
+    {},
+  );
+});
+check("damage recorded with no description is refused", () => {
+  const errors = validateInspection(inspection({ hasDamage: true }), {
+    mode: "pickup", startMileage: null,
+  });
+  assert.ok(errors.damageDescription);
+  assert.deepEqual(
+    validateInspection(inspection({ hasDamage: true, damageDescription: "Scratch on the door" }), {
+      mode: "pickup", startMileage: null,
+    }),
+    {},
+  );
+});
+check("the odometer is required and whole", () => {
+  const errors = (mileage: string) =>
+    validateInspection(inspection({ mileage }), { mode: "pickup", startMileage: null }).mileage;
+  assert.ok(errors(""));
+  assert.ok(errors("-1"));
+  assert.ok(errors("42.5"));
+  assert.equal(errors("0"), undefined, "a brand-new car reads 0");
 });
 
 console.log("\npost-sign-in redirect");

@@ -1,5 +1,5 @@
-import type { BookingDto, GetBookingsResult } from "@/types/api";
-import type { BookingStatus } from "@/lib/enums";
+import type { BookingDto, GetBookingsResult, TripInspectionDto } from "@/types/api";
+import type { BookingStatus, InspectionType } from "@/lib/enums";
 import { toUtcIso } from "@/lib/dates";
 import { apiRequest } from "./client";
 
@@ -129,4 +129,57 @@ export function endTrip(
       damageDescription: input.damageDescription ?? null,
     },
   });
+}
+
+/**
+ * `GET /api/bookings/{id}/inspections` — both hand-overs, pickup first, with
+ * their photos.
+ *
+ * Everything an inspection recorded beyond the mileage readings — fuel,
+ * cleanliness, damage description, photos — lived in `TripInspections` with no
+ * way out of the database until this endpoint. Unlike the other booking
+ * queries it **is** authorized, and to the booking's participants: an
+ * inspection is a damage report and photographs of a specific person's car.
+ */
+export function getBookingInspections(bookingId: string) {
+  return apiRequest<TripInspectionDto[]>(
+    "getBookingInspections",
+    `/api/bookings/${bookingId}/inspections`,
+  );
+}
+
+/**
+ * `POST /api/bookings/{id}/inspections/{type}/photos` — multipart. Returns the
+ * new photo's id.
+ *
+ * The inspection is created by `/start` and `/end`, so the trip has to have
+ * reached that point: uploading before it does is refused with a 409 saying
+ * so, rather than an empty inspection being conjured to hang a photo off.
+ *
+ * As with car images, there is no size or MIME validation server-side.
+ */
+export function uploadInspectionPhoto(
+  bookingId: string,
+  type: InspectionType,
+  file: File,
+  description?: string,
+) {
+  const formData = new FormData();
+  formData.append("File", file);
+  if (description?.trim()) formData.append("Description", description.trim());
+
+  return apiRequest<string>(
+    "uploadInspectionPhoto",
+    `/api/bookings/${bookingId}/inspections/${type}/photos`,
+    { method: "POST", formData },
+  );
+}
+
+/** Note the route is not nested under a booking — the photo id is enough. */
+export function deleteInspectionPhoto(photoId: string) {
+  return apiRequest<void>(
+    "deleteInspectionPhoto",
+    `/api/bookings/inspections/photos/${photoId}`,
+    { method: "DELETE" },
+  );
 }

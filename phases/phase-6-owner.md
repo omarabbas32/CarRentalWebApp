@@ -140,22 +140,92 @@ through `toUtcIso()`.
 
 ## Done when
 
-- [ ] Dashboard stats derive from one bookings call; earnings are labelled as estimated.
-- [ ] Listings show only the signed-in owner's cars.
-- [ ] The wizard survives a refresh mid-flow via the `localStorage` draft.
-- [ ] Every validator rule fires client-side before submit, with actionable copy.
-- [ ] Create → upload photos → set cover completes, and a mid-flow failure recovers to edit
-      rather than losing the car.
-- [ ] Editing one field does not reset the others.
-- [ ] The inbox renders exactly one action per status; Accept is visible, disabled, and
+- [x] Dashboard stats derive from one bookings call; earnings are labelled as estimated.
+- [x] Listings show only the signed-in owner's cars.
+- [x] The wizard survives a refresh mid-flow via the `localStorage` draft.
+- [x] Every validator rule fires client-side before submit, with actionable copy.
+- [x] Create → upload photos → set cover completes, and a mid-flow failure recovers to edit
+      rather than losing the car. Set-cover needed a backend endpoint, which now exists.
+- [x] Editing one field does not reset the others.
+- [x] The inbox renders exactly one action per status; Accept is visible, disabled, and
       explained.
-- [ ] Start trip on a `Pending` booking moves it to `InProgress`.
-- [ ] End trip moves it to `Completed`; fuel and cleanliness are clamped client-side.
-- [ ] The inspection form is usable one-handed at tablet width.
+- [x] Start trip on a `Pending` booking moves it to `InProgress`.
+- [x] End trip moves it to `Completed`; fuel and cleanliness are clamped client-side.
+- [x] The inspection form is usable one-handed at tablet width.
 
 ---
 
-## Notes
+## Outcome
 
-This is the largest phase. If it needs splitting, the seam is between listings (tasks 1–4)
-and trips (tasks 5–6) — they share only the shell.
+Complete, at `/owner` under [`OwnerShell`](../frontend/src/components/layout/owner-shell.tsx)
+and a `RoleGuard` for Owner, Admin and Staff — the same three roles `CreateCar`,
+`UpdateCar`, `StartTrip` and `EndTrip` carry on their `[Authorize]` attributes.
+
+The logic that decides what the UI offers lives in
+[`lib/owner.ts`](../frontend/src/lib/owner.ts),
+[`lib/car-form.ts`](../frontend/src/lib/car-form.ts) and
+[`lib/inspection.ts`](../frontend/src/lib/inspection.ts), and is pinned by
+`npm run verify:logic` — 71 checks, up from 40.
+
+### Three backend defects found here — and fixed
+
+The owner surfaces were built against the API as it was, working around all three. The
+workarounds were then deleted, because the backend was fixed in the same phase. All three
+were code-only — the `InspectionPhotos` table already existed — so **no migration was
+needed.** Full write-up in [phases/README.md § Fixed](README.md#fixed).
+
+**A car with any booking history could never be deleted.** `BookingConfiguration` maps
+`Booking → Car` with `OnDelete(DeleteBehavior.Restrict)` and `DeleteCarCommandHandler`
+checked only ownership before calling `Remove`, so the foreign key rejected the delete inside
+`SaveChangesAsync` and the owner got an unexplained 500. The handler now counts the bookings
+first and throws a new `ConflictException` — 409, carrying a message written for the owner
+that names the count and the reversible alternative. The listings page still disables Delete
+pre-emptively, off the bookings call it already makes, so the refusal is visible before the
+click rather than after it.
+
+**Nothing returned a car image's id**, so a photo could only be deleted in the session that
+uploaded it and a cover could only be set by re-uploading the same photograph.
+`CarDto.Images` now carries `CarImageDto` — id, URL, type, `IsPrimary`, display order —
+and `PUT /api/cars/images/{imageId}/primary` promotes an existing photo.
+[`PhotoManager`](../frontend/src/components/owner/photo-manager.tsx) does all three actions
+on any photo, and `lib/car-images.ts` — the search-call hydration workaround — is deleted.
+Phase 3's car detail page lost its `hydrateImages` double-fetch with it.
+
+**No endpoint accepted inspection photos.** `POST /api/bookings/{id}/inspections/{type}/photos`
+and `GET /api/bookings/{id}/inspections` now exist, the latter returning everything an
+inspection recorded — fuel, cleanliness, damage description, photos — none of which
+`BookingDto` carries. Photos attach *after* `/start` or `/end`, because those are what create
+the inspection row: the same shape as the add-car wizard, for the same reason. Uploading
+before it exists is refused with a 409 rather than an empty inspection being conjured to hang
+a photo off.
+
+Routing them through the car image endpoint was the obvious shortcut and would have been
+wrong: `/api/cars/search` returns every one of a car's images, so damage photos would have
+appeared in the public listing.
+
+### Also: the car image endpoints are authorized now
+
+`POST /api/cars/{id}/images` and `DELETE /api/cars/images/{imageId}` carried no
+`[Authorize]` at all — any caller could upload to, or delete from, any car on the platform.
+Adding a third unauthenticated write endpoint next to them was not defensible, so all three
+now carry the attribute and check ownership through `CarOwnership.EnsureCanManage`, matching
+what `CreateCar`, `UpdateCar` and `DeleteCar` have always done.
+
+### Coordinates are typed in
+
+`Location` is a non-nullable `Point` on create and there is no geocoding endpoint, so
+latitude and longitude are collected as fields with a note explaining why. Sending `0,0`
+would put every car in the Gulf of Guinea, so the pair is required and range-checked —
+the only validation either value ever gets.
+
+### Earnings are the subtotal, and say so
+
+`totalAmount` includes the platform's 10% service fee, 5% tax and a security deposit the
+renter gets back — none of it the owner's money. The tile sums `subTotal` over completed
+trips and is labelled *"estimated, before fees"*. There are no payment records anywhere in
+this system, so even that is an estimate of what was billed, not of what was paid out.
+
+### Notes
+
+The seam this document predicted — listings (tasks 1–4) against trips (tasks 5–6) — held.
+They share only the shell, `lib/owner.ts` and the renter-label helper.

@@ -2,6 +2,7 @@ using MediatR;
 using Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Application.Common.Exceptions;
+using Domain.Car;
 using Domain.User;
 
 namespace Application.Cars.Commands.UpdateCar;
@@ -24,7 +25,9 @@ public class UpdateCarCommandHandler : IRequestHandler<UpdateCarCommand>
 
         if (car == null)
         {
-            throw new Exception($"Car with ID {request.Id} not found.");
+            // Was a plain Exception, hence a 500 for an id that simply doesn't
+            // exist. Matches the user and booking handlers now.
+            throw new NotFoundException(nameof(Car), request.Id);
         }
 
         var currentUserRole = _currentUserService.Role;

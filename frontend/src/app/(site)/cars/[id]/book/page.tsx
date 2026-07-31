@@ -43,6 +43,8 @@ export default async function BookPage({
         <ErrorState
           title="We couldn't load this car"
           message={error?.message ?? "Something went wrong. Try again."}
+          error={error ?? undefined}
+          retry="refresh"
           action={{ href: "/search", label: "Back to search" }}
         />
       </div>

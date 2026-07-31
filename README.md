@@ -1,8 +1,8 @@
-# Car Rental Platform — .NET 9 Backend
+# Car Rental Platform — .NET 9 + Next.js
 
 A peer-to-peer car rental REST API built with **Clean Architecture** and **CQRS**. Owners list vehicles, renters search by location/date/features, and every booking runs through a full trip lifecycle with pickup and return inspections.
 
-This repository is the backend. It is the part I built to practise production API design: layered dependencies, a MediatR pipeline that handles cross-cutting concerns, JWT auth with refresh-token rotation, and EF Core against PostgreSQL.
+The [backend](#architecture) is the part I built to practise production API design: layered dependencies, a MediatR pipeline that handles cross-cutting concerns, JWT auth with refresh-token rotation, and EF Core against PostgreSQL. The [frontend](frontend/README.md) is a Next.js 16 client built against it — search and booking for renters, a workbench for owners, a review console for staff.
 
 ![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)
@@ -88,14 +88,14 @@ sequenceDiagram
     H->>DB: EF Core query / SaveChanges
     DB-->>H: result
     H-->>C: DTO
-    Note over MW: domain exceptions map to<br/>400 / 403 / 404 / 500
+    Note over MW: domain exceptions map to<br/>400 / 403 / 404 / 409 / 500
 ```
 
 The three pieces that make this work:
 
 - **`ValidationBehavior<TRequest, TResponse>`** — resolves every `IValidator<TRequest>` registered in the assembly and throws a domain `ValidationException` before the handler ever runs.
 - **`AuthorizationBehavior<TRequest, TResponse>`** — reads the `[Authorize]` attribute off the *request type* via reflection and checks the caller's role. Authorization is a property of the use case, not of the controller action.
-- **`ExceptionHandlingMiddleware`** — the single place that turns exceptions into status codes. `ValidationException` → `400` with a field-level error payload, `NotFoundException` → `404`, `ForbiddenAccessException` → `403`, anything else → logged and returned as a generic `500` so internals never leak to the client.
+- **`ExceptionHandlingMiddleware`** — the single place that turns exceptions into status codes. `ValidationException` → `400` with a field-level error payload, `NotFoundException` → `404`, `ForbiddenAccessException` → `403`, `ConflictException` → `409` with its message passed through, anything else → logged and returned as a generic `500` so internals never leak to the client.
 
 A controller action, in full:
 
@@ -114,6 +114,7 @@ public async Task<IActionResult> GetBookingById(Guid id)
 - **BCrypt password hashing** with per-password salts, behind an `IPasswordHasher` abstraction.
 - **Rate limiting** — a fixed-window limiter of 5 requests/minute on the entire `/api/auth` surface, to blunt credential stuffing.
 - **Role-based access** — `Renter`, `Owner`, `Admin`, `Staff`, enforced both by ASP.NET Core policies (`Cars.Manage`, `Bookings.Manage`, `Users.Manage`) and by the MediatR authorization behavior.
+- **Privileged roles are provisioned, never self-served.** `POST /api/auth/register` is public and accepts `Renter` and `Owner` only; `POST /api/users`, which can create any role, requires `Admin`. Both were open at one point — registration validated the role with `IsInEnum()`, which passes for `Admin = 2`, and `POST /api/users` carried no authorization and no password rule — so anyone could mint themselves an admin token and read every user's identity documents. Written up in full in [`phases/README.md`](phases/README.md#security-privilege-escalation-via-self-registration--fixed).
 - **No secrets in the repository** — `appsettings.json` ships with placeholders; real values come from user secrets or environment variables. See [Getting started](#getting-started).
 
 ---
@@ -236,7 +237,12 @@ All routes are prefixed `/api`. Bearer token required except where noted.
 | `PUT` | `/{id}` | Update a listing |
 | `DELETE` | `/{id}` | Remove a listing |
 | `POST` | `/{id}/images` | Upload a photo (multipart → Cloudinary) |
-| `DELETE` | `/images/{imageId}` | Delete a photo |
+| `DELETE` | `/images/{imageId}` | Delete a photo — promotes the next one if it was the cover |
+| `PUT` | `/images/{imageId}/primary` | Promote an existing photo to the cover |
+
+`DELETE /{id}` returns `409` for a car with bookings against it: `Booking → Car`
+is mapped `Restrict`, so the row cannot go. Un-list it (`IsActive = false`)
+instead.
 
 ### Bookings — `/api/bookings`
 
@@ -248,12 +254,15 @@ All routes are prefixed `/api`. Bearer token required except where noted.
 | `POST` | `/{id}/cancel` | Cancel with a reason |
 | `POST` | `/{id}/start` | Start trip + pickup inspection |
 | `POST` | `/{id}/end` | End trip + return inspection |
+| `GET` | `/{id}/inspections` | Both inspections with their photos — participants only |
+| `POST` | `/{id}/inspections/{type}/photos` | Attach a photo to the pickup or return inspection |
+| `DELETE` | `/inspections/photos/{photoId}` | Remove an inspection photo |
 
 ### Users — `/api/users`
 
 | Method | Route | Description |
 | --- | --- | --- |
-| `POST` | `/` | Create a user |
+| `POST` | `/` | Provision a user of any role — **Admin only**. Self-service sign-up is `/api/auth/register`. |
 | `GET` | `/{id}` | User detail |
 | `PUT` | `/{id}` | Update profile |
 | `DELETE` | `/{id}` | Delete a user |
@@ -344,14 +353,22 @@ backend/
 
 ## Roadmap
 
-Planned next, in priority order:
+### Shipped
+
+- **Frontend.** A Next.js 16 App Router client lives in [`frontend/`](frontend/README.md) — search and booking for renters, a workbench for owners, and a review console for staff. Built in nine phases, each documented in [`phases/`](phases/) against API behaviour read off the source rather than assumed. Its hermetic checks run in CI alongside the .NET build.
+- **Typed domain exceptions, partly.** `ConflictException` → `409` exists, and its message is written for the caller and passed through rather than replaced. The three car handlers that returned `500` for a missing car now throw `NotFoundException`.
+- **Privilege escalation closed.** Self-registration accepted `Admin` and `Staff`, and `POST /api/users` was public with no password policy at all. Both are fixed; see [Security](#security).
+
+### Planned next, in priority order
 
 - **Test suite.** Handlers depend only on `IAppDbContext`, so they run against the EF Core in-memory or SQLite provider with no database involved. Unit tests over the pricing and availability rules come first, then integration tests across the pipeline behaviors.
+- **Fix the two overlap defects.** `CreateBookingCommandHandler` misses the enclosing case, and it disagrees with `SearchCarsQueryHandler` about which statuses block a car — so a car with a `Pending` booking appears in search and is refused at checkout. Both are written up in [`phases/README.md`](phases/README.md#known-backend-defects).
 - **Database-level booking concurrency.** A PostgreSQL exclusion constraint on `(car_id, daterange)` moves the non-overlap guarantee into the engine, so it holds under simultaneous requests rather than relying on an application-level check.
-- **Typed domain exceptions throughout.** Business-rule failures such as an unavailable car or invalid credentials get their own exception types and map to `409` and `401`, joining the `400`/`403`/`404` cases the middleware already handles.
-- **Full `[Authorize]` coverage**, plus the policy branch of `AuthorizationBehavior` backed by an `IsInPolicyAsync` on `ICurrentUserService` to complement the role checks already in place.
+- **Typed domain exceptions for the rest.** Booking create, cancel, start and end still throw plain `Exception`, so a business-rule failure reaches the client as a generic `500` and the wording has to be reconstructed from context.
+- **`GET /api/cars?ownerId=`.** Owner listings currently filter the unpaginated `GET /api/cars` client-side.
+- **A `Pending → Confirmed` endpoint.** The lifecycle above documents "owner accepts"; nothing implements it, so the Accept control ships visibly disabled.
+- **Full `[Authorize]` coverage**, plus the policy branch of `AuthorizationBehavior` backed by an `IsInPolicyAsync` on `ICurrentUserService` to complement the role checks already in place. The booking queries and two user routes are still open.
 - **Payments, messaging, reviews, and notifications.** The entities and their relationships are modelled; the use cases and endpoints come next.
-- **Frontend.** The API is designed to serve a SPA from the reserved `frontend/` directory.
 
 ---
 

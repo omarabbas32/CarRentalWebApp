@@ -154,10 +154,11 @@ async function toApiError(
   response: Response,
 ): Promise<ApiError> {
   let fieldErrors: ReturnType<typeof toFieldErrors>;
+  let message: string | undefined;
 
-  // A 400 carries `{ errors: { PropertyName: [...] } }`. Every other status
-  // carries `{ error: "..." }`, which is generic by design and deliberately
-  // not surfaced — mapApiError supplies the wording instead.
+  // A 400 carries `{ errors: { PropertyName: [...] } }`. Most other statuses
+  // carry `{ error: "..." }`, which is generic by design and deliberately not
+  // surfaced — mapApiError supplies the wording instead.
   if (response.status === 400) {
     const payload = await readJson(response);
     if (payload && typeof payload === "object" && "errors" in payload) {
@@ -165,10 +166,22 @@ async function toApiError(
     }
   }
 
+  // 409 is the exception. `ConflictException` is thrown by a handler that
+  // refused a legitimate request for a specific, stateful reason — "this car
+  // has 3 bookings against it" — and its message is written for the person
+  // reading it. No amount of operation context could reconstruct that here.
+  if (response.status === 409) {
+    const payload = await readJson(response);
+    if (payload && typeof payload === "object" && "error" in payload) {
+      const text = (payload as { error: unknown }).error;
+      if (typeof text === "string" && text.trim() !== "") message = text;
+    }
+  }
+
   return new ApiError({
     status: response.status,
     operation,
-    message: mapApiError(operation, response.status),
+    message: message ?? mapApiError(operation, response.status),
     fieldErrors,
   });
 }

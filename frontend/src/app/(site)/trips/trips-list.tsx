@@ -36,7 +36,12 @@ export function TripsList() {
   if (state.status === "loading") return <ListSkeleton />;
 
   if (state.status === "error") {
-    return <ErrorState title="We couldn't load your trips" message={state.error.message} />;
+    return <ErrorState
+        title="We couldn't load your trips"
+        message={state.error.message}
+        error={state.error}
+        retry={state.reload}
+      />;
   }
 
   const all = state.data.bookings;

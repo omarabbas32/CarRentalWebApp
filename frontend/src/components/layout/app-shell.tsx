@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
+import { adminRoutes } from "@/lib/admin-routes";
 import { UserRole } from "@/lib/enums";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,10 @@ const NAV: NavItem[] = [
   { href: "/search", label: "Find a car" },
   { href: "/trips", label: "My trips", requiresAuth: true },
   { href: "/owner", label: "Owner", roles: [UserRole.Owner] },
-  { href: "/admin/verifications", label: "Admin", roles: [UserRole.Admin, UserRole.Staff] },
+  // The console lives on an unlisted path — see lib/admin-routes.ts. It is
+  // linked here only for signed-in Staff and Admin, so the path is not in the
+  // markup any anonymous visitor receives.
+  { href: adminRoutes.verifications, label: "Console", roles: [UserRole.Admin, UserRole.Staff] },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

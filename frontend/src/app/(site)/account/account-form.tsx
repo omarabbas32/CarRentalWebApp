@@ -34,7 +34,12 @@ export function AccountForm() {
   if (!userId || state.status === "loading") return <FormSkeleton />;
 
   if (state.status === "error") {
-    return <ErrorState title="We couldn't load your profile" message={state.error.message} />;
+    return <ErrorState
+        title="We couldn't load your profile"
+        message={state.error.message}
+        error={state.error}
+        retry={state.reload}
+      />;
   }
 
   return <ProfileFields user={state.data} onSaved={state.reload} />;

@@ -99,13 +99,88 @@ style. Trigger on changes under `frontend/**`.
 
 ## Done when
 
-- [ ] Killing the API mid-session produces a clear, retryable message on every route.
-- [ ] A bad ID shows "not found", not "something went wrong".
-- [ ] The full renter loop is completable by keyboard alone.
-- [ ] Contrast passes AA in both themes.
-- [ ] Every route works at 390px with no horizontal scroll.
-- [ ] Lint, typecheck and build all pass in CI on a pull request.
-- [ ] `frontend/README.md` gets a new developer running against the API without help.
+- [x] Killing the API mid-session produces a clear, retryable message on every route.
+- [x] A bad ID shows "not found", not "something went wrong".
+- [ ] The full renter loop is completable by keyboard alone. **Not verified** — see below.
+- [x] Contrast passes AA in both themes. Measured, not assumed: `npm run verify:contrast`.
+- [x] Every route works at 390px with no horizontal scroll. Measured across 15 routes.
+- [x] Lint, typecheck and build all pass in CI on a pull request.
+- [x] `frontend/README.md` gets a new developer running against the API without help.
+
+---
+
+## Outcome
+
+Complete bar one item, which is recorded honestly below rather than ticked.
+
+### Boundaries
+
+`error.tsx` per segment — root, `(site)`, `owner`, the staff console — plus
+`global-error.tsx` for a failing root layout and two `not-found.tsx` files. All of them
+share [`RouteError`](../frontend/src/components/route-error.tsx).
+
+The retry **refetches**. Next 16 passes `unstable_retry`, which re-runs the boundary's
+children including server fetches; a page reload would also work and would throw away the
+rest of the session to do it. `global-error.tsx` styles itself from the OS colour scheme,
+because it replaces the root layout and therefore runs without the theme script, the
+providers or the toaster — anything imported from `components/` risks failing inside the
+failure.
+
+`GetCarById` throwing `NotFoundException` is what made the second box tickable. Until it
+did, a bad car id and a broken server were the same 500, and calling `notFound()` would
+have been a guess. `/cars/<unknown-guid>` now renders *"This car isn't listed any more"*.
+
+### A dead connection is not a broken server
+
+`ErrorState` takes the `ApiError` and swaps its own heading to **"Can't reach the server"**
+when `isNetworkError` is set, and every fetch failure in the app now carries a retry —
+`state.reload` from a client component, `"refresh"` from a server-rendered page, which
+re-runs the server render through the router instead of reloading the document.
+
+`useAsync` used to wrap non-`ApiError` failures with `operation: "getBookings"` hard-coded,
+so reading `error.operation` anywhere else gave a confidently wrong answer. There is a
+neutral `"unknown"` operation for that case now.
+
+### Contrast: two real failures
+
+`npm run verify:contrast` parses `globals.css` — rather than restating the values, which
+would drift the first time a token was tuned — and measures 40 pairs across both themes:
+body and muted text on every surface, button labels, the focus ring, and all five status
+pills against their own backgrounds.
+
+It found `--muted-foreground` at **4.48:1** on the page and **4.12:1** on `--muted`,
+against a 4.5 requirement. `DESIGN.md` had said these pairs were chosen for AA; two of
+them were not. Lightness moved from 45% to 42%. Secondary text carries prices, dates and
+every form hint, so it was the wrong thing to have borderline.
+
+Now wired into `npm run verify`, so it runs in CI.
+
+### 390px, measured
+
+Chrome over the DevTools protocol with real mobile emulation, asserting
+`documentElement.scrollWidth === clientWidth` on 15 routes — public, authenticated and
+error — with a signed-in owner session injected into `localStorage` for the owner ones.
+All pass.
+
+One note rather than a defect: the **List a car** button in `OwnerShell`'s nav sits past
+390px inside the nav's own `overflow-x-auto`, so it needs a sideways nudge to reach. The
+page does not scroll, and `/owner/cars` carries the same action in its header.
+
+### Not verified: keyboard-only renter loop
+
+Focus rings are intact, dialogs come from Radix and trap focus, every input has a real
+`<label>`, errors bind through `aria-describedby`, and the booking-inbox row got a real
+`<button>` because a `<tr>` with an `onClick` is not reachable by keyboard. But nobody has
+actually driven search → car → checkout → cancel using only the keyboard, and the box says
+so.
+
+### CI
+
+A `Frontend (Next 16)` job runs install, lint, typecheck, `npm run verify` and build.
+Deliberately **not** path-filtered to `frontend/**`: GitHub supports path filters only at
+the workflow level, a per-job one needs a third-party action, and this repo uses official
+actions only. A skipped required check also reports as pending, which is worse than running
+an inexpensive job every time.
 
 ---
 

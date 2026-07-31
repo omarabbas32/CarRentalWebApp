@@ -76,8 +76,20 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
           },
         });
 
+      // GetCarById throws NotFoundException now, so this is a real 404.
       case url.pathname === "/api/cars/missing":
-        return json(500, { error: "An internal server error occurred." });
+        return json(404, { error: "Entity \"Car\" (missing) was not found." });
+
+      // ConflictException — the one status whose message is written for the
+      // user and is passed through rather than replaced.
+      case url.pathname === "/api/cars/booked" && req.method === "DELETE":
+        return json(409, {
+          error:
+            "This car has 3 bookings against it and cannot be deleted. Set IsActive to false to take it out of search instead — that keeps its booking history.",
+        });
+
+      case url.pathname === "/api/cars/conflict-empty" && req.method === "DELETE":
+        return json(409, {});
 
       case url.pathname === "/api/bookings/nope":
         return json(404, { error: "Booking not found." });
@@ -208,10 +220,32 @@ try {
     assert.ok(!err.message.includes("internal server error"));
   });
 
-  await check("a missing car reads as removed, despite arriving as a 500", async () => {
+  await check("a missing car is a real 404 now, not a 500", async () => {
+    // GetCarById used to throw a plain Exception, so "no such car" and "server
+    // broke" were the same response. It throws NotFoundException now.
     const err = await capture(() => apiRequest("getCar", "/api/cars/missing"));
-    assert.equal(err.status, 500);
-    assert.match(err.message, /may have been removed/);
+    assert.ok(err.isNotFound);
+    assert.match(err.message, /couldn't find this car/);
+    assert.ok(!err.message.includes("was not found"), "server wording never reaches a user");
+  });
+
+  await check("a 409 shows the server's own message", async () => {
+    // The one status whose text is written for the person reading it: no
+    // amount of operation context could reconstruct "3 bookings".
+    const err = await capture(() =>
+      apiRequest("deleteCar", "/api/cars/booked", { method: "DELETE" }),
+    );
+    assert.ok(err.isConflict);
+    assert.match(err.message, /3 bookings against it/);
+    assert.match(err.message, /IsActive/, "and names the reversible alternative");
+  });
+
+  await check("a 409 with no usable body falls back to operation wording", async () => {
+    const err = await capture(() =>
+      apiRequest("deleteCar", "/api/cars/conflict-empty", { method: "DELETE" }),
+    );
+    assert.ok(err.isConflict);
+    assert.match(err.message, /Turn off Listed/);
   });
 
   await check("404 and 403 carry operation-specific wording", async () => {

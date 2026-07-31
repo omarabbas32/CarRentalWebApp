@@ -68,7 +68,12 @@ export function VerificationPanel() {
   if (!userId || state.status === "loading") return <PanelSkeleton />;
 
   if (state.status === "error") {
-    return <ErrorState title="We couldn't load your documents" message={state.error.message} />;
+    return <ErrorState
+        title="We couldn't load your documents"
+        message={state.error.message}
+        error={state.error}
+        retry={state.reload}
+      />;
   }
 
   return <Tiles user={state.data} onUploaded={state.reload} />;
