@@ -39,5 +39,10 @@ public record CarDto(
     double AverageRating,
     int TotalReviews,
     int TotalTrips,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    // Appended so the existing positional arguments keep their meaning.
+    // Ordered primary first, then by DisplayOrder — the same order
+    // SearchCarsQueryHandler puts ImageUrls in, so a cover is a cover
+    // everywhere.
+    IReadOnlyList<CarImageDto> Images
 );

@@ -25,6 +25,8 @@ export function BookingDetail({ bookingId }: { bookingId: string }) {
       <ErrorState
         title="We couldn't load this booking"
         message={state.error.message}
+        error={state.error}
+        retry={state.reload}
         action={{ href: "/trips", label: "Back to my trips" }}
       />
     );

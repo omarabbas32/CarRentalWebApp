@@ -265,11 +265,11 @@ Written from the user's side of the screen.
 
 Ordered by how much they unblock. None are required to *start* — each has a documented workaround above.
 
-1. **Add `images` to `CarDto`** — removes the double-fetch on every car detail page.
-2. **`GET /api/cars?ownerId=`** — removes the client-side filter over an unpaginated list of every car.
+1. ~~**Add `images` to `CarDto`**~~ — **done in Phase 6.** `CarDto.images` is a `CarImageDto[]` carrying ids, so the double-fetch is gone and photos can be deleted and re-covered. See [phases/README.md § Fixed](../phases/README.md#fixed).
+2. **`GET /api/cars?ownerId=`** — removes the client-side filter over an unpaginated list of every car. Now the largest remaining one.
 3. **A `Pending → Confirmed` endpoint** — the README documents "owner accepts" but nothing implements it.
 4. **Populate `MileageLimit` from `car.DailyMileageLimit` on booking create** — one line; makes the extra-mileage charge live instead of dead code.
-5. **Typed domain exceptions → 400 / 401 / 409** — lets the client distinguish "dates taken" from "server broke" instead of inferring from context.
+5. ~~**Typed domain exceptions → 400 / 401 / 409**~~ — **partly done in Phase 6.** `ConflictException` → 409 exists and its message reaches the user verbatim; the three car handlers throw `NotFoundException` rather than returning 500 for a missing car. The business-rule 500s in booking create, cancel, start and end are still plain `Exception`s and should follow.
 6. **Persist the verification `reason`** — lets a rejected user see why.
 7. **Add `renterName` / car image to `BookingDto`** — removes an N+1 fetch on every booking list.
 

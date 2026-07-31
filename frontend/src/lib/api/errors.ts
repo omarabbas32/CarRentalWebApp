@@ -28,6 +28,7 @@ export type ApiOperation =
   | "deleteCar"
   | "uploadCarImage"
   | "deleteCarImage"
+  | "setPrimaryCarImage"
   // bookings
   | "createBooking"
   | "getBookings"
@@ -35,6 +36,9 @@ export type ApiOperation =
   | "cancelBooking"
   | "startTrip"
   | "endTrip"
+  | "getBookingInspections"
+  | "uploadInspectionPhoto"
+  | "deleteInspectionPhoto"
   // users
   | "createUser"
   | "getUser"
@@ -42,7 +46,13 @@ export type ApiOperation =
   | "deleteUser"
   | "uploadVerificationDocument"
   | "getPendingVerifications"
-  | "processVerification";
+  | "processVerification"
+  /**
+   * Not an endpoint. For a failure that never reached the request layer at all
+   * — a bug inside a fetcher — so that `error.operation` is honest instead of
+   * naming whichever call the placeholder happened to be.
+   */
+  | "unknown";
 
 /** Field name → messages, camelCased from the server's PascalCase keys. */
 export type FieldErrors = Record<string, string[]>;
@@ -82,6 +92,14 @@ export class ApiError extends Error {
     return this.status === 400;
   }
   /**
+   * A refused-but-legitimate request — deleting a car that still has bookings,
+   * say. Unlike a 500, the server's message is written for the user and is
+   * carried through by `ConflictException`, so `message` is worth showing.
+   */
+  get isConflict() {
+    return this.status === 409;
+  }
+  /**
    * ASP.NET's fixed-window limiter rejects with 503 by default; 429 is the
    * conventional code and may be configured later. Treat both as rate limiting.
    */
@@ -112,6 +130,7 @@ const BUSINESS_FAILURE: Record<ApiOperation, string> = {
   deleteCar: "We couldn't remove this car.",
   uploadCarImage: "That photo didn't upload. Try a smaller file.",
   deleteCarImage: "We couldn't remove that photo.",
+  setPrimaryCarImage: "We couldn't make that the cover photo.",
 
   createBooking: "Those dates were just taken. Try different dates.",
   getBookings: "We couldn't load your bookings.",
@@ -119,6 +138,9 @@ const BUSINESS_FAILURE: Record<ApiOperation, string> = {
   cancelBooking: "This booking can no longer be cancelled.",
   startTrip: "This trip can't be started — it may already be under way.",
   endTrip: "This trip can't be ended — it may not have started yet.",
+  getBookingInspections: "We couldn't load the inspection record.",
+  uploadInspectionPhoto: "That photo didn't upload. Try a smaller file.",
+  deleteInspectionPhoto: "We couldn't remove that photo.",
 
   createUser: "We couldn't create that account.",
   getUser: "We couldn't load this profile.",
@@ -127,6 +149,8 @@ const BUSINESS_FAILURE: Record<ApiOperation, string> = {
   uploadVerificationDocument: "That document didn't upload. Try a smaller file.",
   getPendingVerifications: "We couldn't load the review queue.",
   processVerification: "We couldn't record that decision.",
+
+  unknown: "Something went wrong. Try again.",
 };
 
 /** What a 404 means, where the endpoint actually returns one. */
@@ -142,8 +166,27 @@ const NOT_FOUND: Partial<Record<ApiOperation, string>> = {
   createBooking: "That car is no longer listed.",
   uploadCarImage: "That car no longer exists.",
   deleteCarImage: "That photo no longer exists.",
+  setPrimaryCarImage: "That photo no longer exists.",
+  deleteCar: "That car no longer exists.",
+  updateCar: "That car no longer exists.",
+  getBookingInspections: "We couldn't find that booking.",
+  uploadInspectionPhoto: "That booking no longer exists.",
+  deleteInspectionPhoto: "That photo no longer exists.",
   uploadVerificationDocument: "That account no longer exists.",
   processVerification: "That account no longer exists.",
+};
+
+/**
+ * Fallback wording for a 409, used only when the body could not be read.
+ *
+ * Normally the server's own message wins here — it is the one status whose
+ * text is written for the user rather than for a log.
+ */
+const CONFLICT: Partial<Record<ApiOperation, string>> = {
+  deleteCar:
+    "This car has bookings against it and can't be deleted. Turn off Listed to take it out of search instead.",
+  uploadInspectionPhoto:
+    "The inspection doesn't exist yet — start or end the trip first.",
 };
 
 /** What a 403 means. The server's own text is generic; context is better. */
@@ -153,6 +196,12 @@ const FORBIDDEN: Partial<Record<ApiOperation, string>> = {
   createCar: "Only owners can list a car.",
   updateCar: "You can only edit your own cars.",
   deleteCar: "You can only remove your own cars.",
+  uploadCarImage: "You can only add photos to your own cars.",
+  deleteCarImage: "You can only remove photos from your own cars.",
+  setPrimaryCarImage: "You can only change the cover on your own cars.",
+  getBookingInspections: "You can only see inspections for your own bookings.",
+  uploadInspectionPhoto: "Only the car's owner can add inspection photos.",
+  deleteInspectionPhoto: "Only the car's owner can remove inspection photos.",
   startTrip: "Only the car's owner can start this trip.",
   endTrip: "Only the car's owner can end this trip.",
   getPendingVerifications: "You don't have access to the review queue.",
@@ -187,6 +236,11 @@ export function mapApiError(
       return FORBIDDEN[operation] ?? "You don't have permission to do that.";
     case 404:
       return NOT_FOUND[operation] ?? "We couldn't find what you were looking for.";
+    case 409:
+      // Only reached when the body was missing or unreadable. `ConflictException`
+      // messages are written for the user and the client passes them straight
+      // through — see `toApiError`.
+      return CONFLICT[operation] ?? "That can't be done while things are as they are.";
     case 429:
     case 503:
       // /api/auth/* shares one 5-request-per-minute budget across login,

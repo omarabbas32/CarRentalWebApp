@@ -1,5 +1,7 @@
 using Application.Cars.Commands.CreateCar;
 using Application.Cars.Commands.DeleteCar;
+using Application.Cars.Commands.DeleteCarImage;
+using Application.Cars.Commands.SetPrimaryCarImage;
 using Application.Cars.Commands.UpdateCar;
 using Application.Cars.Queries.GetCarById;
 using Application.Cars.Queries.GetCars;
@@ -139,7 +141,18 @@ public class CarsController : BaseApiController
     [HttpDelete("images/{imageId:guid}")]
     public async Task<IActionResult> DeleteImage(Guid imageId)
     {
-        await Mediator.Send(new Application.Cars.Commands.DeleteCarImage.DeleteCarImageCommand(imageId));
+        await Mediator.Send(new DeleteCarImageCommand(imageId));
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Promotes an existing photo to the car's cover. Until this existed,
+    /// `IsPrimary` could only be set by the upload that created the image.
+    /// </summary>
+    [HttpPut("images/{imageId:guid}/primary")]
+    public async Task<IActionResult> SetPrimaryImage(Guid imageId)
+    {
+        await Mediator.Send(new SetPrimaryCarImageCommand(imageId));
         return NoContent();
     }
 }

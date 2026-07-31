@@ -27,7 +27,16 @@ public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
             .NotEmpty().WithMessage("Last name is required.")
             .MaximumLength(50).WithMessage("Last name must not exceed 50 characters.");
 
+        // `IsInEnum()` alone accepted Admin (2) and Staff (3) on a public,
+        // unauthenticated endpoint — so anyone could grant themselves an admin
+        // token by sending `"role": 2`, and that token opened the verification
+        // queue, every user's passport and licence images, and account
+        // deletion. Reproduced against the running API on 2026-07-31.
+        //
+        // Privileged accounts are provisioned, not self-served: see
+        // `CreateUserCommand`, which is Admin-only for the same reason.
         RuleFor(v => v.Role)
-            .IsInEnum().WithMessage("A valid role must be selected.");
+            .Must(r => r == UserRole.Renter || r == UserRole.Owner)
+            .WithMessage("You can register as a renter or an owner.");
     }
 }

@@ -50,3 +50,6 @@ dist/
 *.p12
 .env
 .env.*
+
+## Diagrams (generated assets, not tracked)
+docs/diagrams/

@@ -66,17 +66,18 @@ export function searchCars(input: SearchCarsInput) {
  * `GET /api/cars` — every car, unpaginated, with no filters at all.
  *
  * There is no `?ownerId=`, so owner listings filter this client-side. Fine at
- * demo scale; the first thing to fix. See phases/phase-6-owner.md.
+ * demo scale; still the first thing to fix. See phases/phase-6-owner.md.
  */
 export function getCars() {
   return apiRequest<CarDto[]>("getCars", "/api/cars", { auth: false });
 }
 
 /**
- * `GET /api/cars/{id}` — returns a `CarDto`, which has **no images**.
+ * `GET /api/cars/{id}` — a `CarDto`, images included.
  *
- * A missing car throws a plain `Exception` server-side, so it arrives as a 500,
- * not a 404. Callers cannot distinguish "no such car" from "server broke".
+ * Both used to be worse: the DTO carried no images, and a missing car threw a
+ * plain `Exception` that arrived as a 500 rather than a 404. Fixed together
+ * with the owner surfaces; this now returns a real 404 for an unknown id.
  */
 export function getCar(id: string) {
   return apiRequest<CarDto>("getCar", `/api/cars/${id}`, { auth: false });
@@ -139,6 +140,14 @@ export function updateCar(
   });
 }
 
+/**
+ * A car with **any** booking against it — completed and cancelled ones
+ * included — is refused with a `409` and a message explaining why, because
+ * `Booking → Car` is mapped `OnDelete(DeleteBehavior.Restrict)`. It used to be
+ * an unexplained 500 from the foreign key.
+ *
+ * The reversible alternative is `isActive: false` via `updateCar`.
+ */
 export function deleteCar(id: string) {
   return apiRequest<void>("deleteCar", `/api/cars/${id}`, { method: "DELETE" });
 }
@@ -149,7 +158,10 @@ export function deleteCar(id: string) {
  * Needs a car id, which is why the add-car wizard creates the car first and
  * uploads photos afterwards.
  *
- * There is **no size or MIME validation server-side**; an oversized file
+ * The first photo on a car becomes its cover regardless of `isPrimary`, so a
+ * listing is never left with photos and no cover.
+ *
+ * There is still **no size or MIME validation server-side**; an oversized file
  * becomes a 500. Validate before calling this.
  */
 export function uploadCarImage(
@@ -169,9 +181,28 @@ export function uploadCarImage(
   });
 }
 
-/** Note the route is `/api/cars/images/{imageId}` — not nested under a car. */
+/**
+ * Note the route is `/api/cars/images/{imageId}` — not nested under a car.
+ *
+ * Deleting the cover promotes the next photo by display order server-side, so
+ * a car with photos always has one.
+ */
 export function deleteCarImage(imageId: string) {
   return apiRequest<void>("deleteCarImage", `/api/cars/images/${imageId}`, {
     method: "DELETE",
+  });
+}
+
+/**
+ * `PUT /api/cars/images/{imageId}/primary` — promotes an existing photo to the
+ * cover, clearing the flag on the car's others.
+ *
+ * Before this endpoint existed, `isPrimary` could only be set by the upload
+ * that created an image, so changing a cover meant uploading the same
+ * photograph again.
+ */
+export function setPrimaryCarImage(imageId: string) {
+  return apiRequest<void>("setPrimaryCarImage", `/api/cars/images/${imageId}/primary`, {
+    method: "PUT",
   });
 }

@@ -11,8 +11,10 @@
 import type {
   BookingStatus,
   CarCategory,
+  CarImageType,
   FuelType,
   GovernmentIdType,
+  InspectionType,
   TransmissionType,
   UserRole,
   UserStatus,
@@ -40,12 +42,27 @@ export type AuthenticationResult = {
 };
 
 /**
+ * `Application.Cars.Common.CarImageDto`.
+ *
+ * Carries the **id**, which is what `DELETE /api/cars/images/{imageId}` and
+ * `PUT /api/cars/images/{imageId}/primary` need. `CarSearchResultDto` still
+ * sends bare URLs, which is all a renter browsing results uses.
+ */
+export type CarImageDto = {
+  id: string;
+  url: string;
+  type: CarImageType;
+  isPrimary: boolean;
+  displayOrder: number;
+};
+
+/**
  * `Application.Cars.Common.CarDto`.
  *
- * Note what is absent: **no images**. Only `CarSearchResultDto` carries
- * `imageUrls`. The omission is deliberate here so that reaching for
- * `car.imageUrls` on a detail page is a compile error rather than an
- * `undefined` at runtime. See phases/phase-3-discovery.md.
+ * `images` was added to the DTO when the owner surfaces landed — before that
+ * this type had none, and every caller that needed a photo had to pair its
+ * fetch with a search call and match on id. Ordered primary first, then by
+ * display order, the same as `CarSearchResultDto.imageUrls`.
  */
 export type CarDto = {
   id: string;
@@ -84,6 +101,7 @@ export type CarDto = {
   totalReviews: number;
   totalTrips: number;
   createdAt: string;
+  images: CarImageDto[];
 };
 
 /**
@@ -180,6 +198,36 @@ export type BookingDto = {
   cancelledByUserId: string | null;
   cancellationReason: string | null;
   createdAt: string;
+};
+
+/**
+ * `Application.Bookings.Common.TripInspectionDto`.
+ *
+ * Everything the hand-over recorded. `BookingDto` carries only the mileage
+ * readings and the actual pickup/return times — the fuel level, cleanliness
+ * rating, damage description and photos were written to `TripInspections` and
+ * had no way out of the database until `GET /api/bookings/{id}/inspections`.
+ */
+export type TripInspectionDto = {
+  id: string;
+  bookingId: string;
+  type: InspectionType;
+  inspectedByUserId: string;
+  inspectionDateTime: string;
+  /** 0–100. Unvalidated server-side; see lib/inspection.ts. */
+  fuelLevel: number;
+  /** 1–5, likewise. */
+  cleanliness: number;
+  generalConditionNotes: string | null;
+  hasDamage: boolean;
+  damageDescription: string | null;
+  photos: InspectionPhotoDto[];
+};
+
+export type InspectionPhotoDto = {
+  id: string;
+  photoUrl: string;
+  description: string | null;
 };
 
 /** `Application.Bookings.Queries.GetBookings.GetBookingsResult`. */
