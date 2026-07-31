@@ -16,8 +16,9 @@ import { priceBreakdown, breakdownFromBooking } from "@/lib/pricing";
 import { cloudinaryThumb, isCloudinaryUrl } from "@/lib/cloudinary";
 import { toFieldErrors, mapApiError, ApiError } from "@/lib/api/errors";
 import { isPasswordValid, passwordRuleResults, nameError, isEmailValid } from "@/lib/auth/password";
+import { canCancelBooking, isBookingParticipant, TRIP_TABS } from "@/lib/bookings";
 import { safeNext } from "@/components/auth/redirect-if-authenticated";
-import { parseRoleName, parseCategoryName, carCategoryName, CarCategory, UserRole, BookingStatus, bookingStatusLabel } from "@/lib/enums";
+import { parseRoleName, parseCategoryName, carCategoryName, CarCategory, UserRole, BookingStatus, bookingStatusLabel, enumValues } from "@/lib/enums";
 
 let passed = 0;
 const check = (name: string, fn: () => void) => {
@@ -221,6 +222,42 @@ check("name and email rules match the validator", () => {
   assert.ok(nameError("a".repeat(51), "First"));
   assert.equal(isEmailValid("nour@example.com"), true);
   assert.equal(isEmailValid("nope"), false);
+});
+
+console.log("\nbooking rules");
+check("cancel is offered only where the handler accepts it", () => {
+  // Refused server-side: "Booking is already cancelled." / "Completed bookings
+  // cannot be cancelled." Rendering the control in those states would produce
+  // a guaranteed 500.
+  assert.equal(canCancelBooking(BookingStatus.Pending), true);
+  assert.equal(canCancelBooking(BookingStatus.Confirmed), true);
+  assert.equal(canCancelBooking(BookingStatus.InProgress), true);
+  assert.equal(canCancelBooking(BookingStatus.Disputed), true, "handler does not refuse it");
+  assert.equal(canCancelBooking(BookingStatus.Completed), false);
+  assert.equal(canCancelBooking(BookingStatus.Cancelled), false);
+});
+check("trip tabs partition every status exactly once", () => {
+  // A status matching no tab would make a booking disappear from /trips with
+  // no indication at all.
+  const all = enumValues(BookingStatus);
+  for (const status of all) {
+    const matches = TRIP_TABS.filter((t) => t.statuses.includes(status));
+    assert.equal(matches.length, 1, `status ${status} matched ${matches.length} tabs`);
+  }
+  const covered = TRIP_TABS.flatMap((t) => [...t.statuses]);
+  assert.equal(covered.length, all.length, "no status counted twice");
+});
+check("booking access is limited to its participants", () => {
+  const booking = { renterId: "renter-1", ownerId: "owner-1" };
+  const as = (userId: string, role: UserRole) => ({ userId, role });
+
+  assert.equal(isBookingParticipant(booking, as("renter-1", UserRole.Renter)), true);
+  assert.equal(isBookingParticipant(booking, as("owner-1", UserRole.Owner)), true);
+  assert.equal(isBookingParticipant(booking, as("someone-else", UserRole.Renter)), false);
+  assert.equal(isBookingParticipant(booking, null), false, "signed out");
+  // Staff and Admin review other people's bookings by design.
+  assert.equal(isBookingParticipant(booking, as("admin", UserRole.Admin)), true);
+  assert.equal(isBookingParticipant(booking, as("staff", UserRole.Staff)), true);
 });
 
 console.log("\npost-sign-in redirect");
