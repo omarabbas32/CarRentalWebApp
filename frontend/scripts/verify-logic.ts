@@ -16,6 +16,7 @@ import { priceBreakdown, breakdownFromBooking } from "@/lib/pricing";
 import { cloudinaryThumb, isCloudinaryUrl } from "@/lib/cloudinary";
 import { toFieldErrors, mapApiError, ApiError } from "@/lib/api/errors";
 import { isPasswordValid, passwordRuleResults, nameError, isEmailValid } from "@/lib/auth/password";
+import { validateImageFile, MAX_UPLOAD_BYTES } from "@/lib/uploads";
 import { canCancelBooking, isBookingParticipant, TRIP_TABS } from "@/lib/bookings";
 import { safeNext } from "@/components/auth/redirect-if-authenticated";
 import { parseRoleName, parseCategoryName, carCategoryName, CarCategory, UserRole, BookingStatus, bookingStatusLabel, enumValues } from "@/lib/enums";
@@ -258,6 +259,41 @@ check("booking access is limited to its participants", () => {
   // Staff and Admin review other people's bookings by design.
   assert.equal(isBookingParticipant(booking, as("admin", UserRole.Admin)), true);
   assert.equal(isBookingParticipant(booking, as("staff", UserRole.Staff)), true);
+});
+
+console.log("\nupload validation (the only validation there is)");
+const fakeFile = (type: string, size: number) => ({ type, size }) as File;
+check("accepts the image types Cloudinary handles", () => {
+  assert.equal(validateImageFile(fakeFile("image/jpeg", 500_000)), null);
+  assert.equal(validateImageFile(fakeFile("image/png", 500_000)), null);
+  assert.equal(validateImageFile(fakeFile("image/webp", 500_000)), null);
+});
+check("rejects PDFs by name — the common mistake for scanned documents", () => {
+  const msg = validateImageFile(fakeFile("application/pdf", 100_000));
+  assert.ok(msg);
+  assert.match(msg, /PDFs aren't supported/);
+  // UploadImageAsync uses ImageUploadParams, so a PDF fails server-side as an
+  // opaque 500 with nothing for the user to act on.
+});
+check("rejects oversized and empty files before they reach the server", () => {
+  const big = validateImageFile(fakeFile("image/jpeg", MAX_UPLOAD_BYTES + 1));
+  assert.ok(big);
+  assert.match(big, /under 10\.0 MB/);
+  const empty = validateImageFile(fakeFile("image/jpeg", 0));
+  assert.ok(empty);
+  // A zero-length file makes UploadImageAsync return "", which the handler
+  // turns into "Document upload failed." — a 500 with no detail.
+  assert.match(empty, /empty/);
+});
+check("every message says what to do, not what is wrong", () => {
+  for (const f of [
+    fakeFile("application/pdf", 10),
+    fakeFile("image/gif", 10),
+    fakeFile("image/jpeg", MAX_UPLOAD_BYTES + 1),
+  ]) {
+    const msg = validateImageFile(f);
+    assert.ok(msg && !/^invalid/i.test(msg), `unhelpful message: ${msg}`);
+  }
 });
 
 console.log("\npost-sign-in redirect");
