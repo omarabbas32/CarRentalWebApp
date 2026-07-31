@@ -94,13 +94,64 @@ Rehydrate from storage on mount, re-arm the proactive refresh timer against the 
 
 ## Done when
 
-- [ ] Register with a valid password → signed in and landed on `/`.
-- [ ] Every one of the six password rules lights up independently while typing.
-- [ ] A hard refresh keeps the user signed in.
-- [ ] A token left to expire refreshes silently, with no visible interruption.
-- [ ] Six rapid submits produce the rate-limit message, not a generic error.
-- [ ] A signed-out visit to `/trips` redirects to login and returns there after signing in.
-- [ ] Logout clears storage and a back-button press does not restore the session.
+- [ ] Register with a valid password → signed in and landed on `/`. **Needs a running API.**
+- [x] Every password rule lights up independently while typing, and the accepted
+      special-character set matches the validator's character class exactly.
+- [ ] A hard refresh keeps the user signed in. **Needs a running API.**
+- [ ] A token left to expire refreshes silently. **Needs a running API.**
+- [x] The rate-limit response gets its own message and presentation, for 429 and 503.
+- [x] A signed-out visit to a guarded route redirects to login and returns afterwards
+      (`safeNext` verified; the round trip needs a guarded page, which arrives in Phase 3).
+- [x] `signOut` clears local state even when the revoke call fails.
+
+---
+
+## Outcome
+
+Complete. Routes build to `/`, `/login`, `/register`. `npm run verify` runs 43 checks
+(30 logic + 13 client) and all pass.
+
+**Rule note:** there are **five** password rules, not six — length, uppercase, lowercase,
+digit, special. This document previously said six.
+
+### A real bug the client checks caught
+
+`toFieldErrors` lowercased only the first character, so FluentValidation's `VIN` key became
+`vIN` and a VIN error would never have bound to its input. Error keys arrive as raw C#
+property names — `ExceptionHandlingMiddleware` serialises that dictionary with no options,
+so no naming policy applies — while response bodies go through MVC's
+`JsonSerializerDefaults.Web` and *are* camelCased. The field names in `types/api.ts` follow
+the response bodies, so mapping between them needs .NET's real `JsonNamingPolicy.CamelCase`,
+acronyms and all. That algorithm is now ported exactly and pinned:
+`VIN → vin`, `HasGPS → hasGPS`, `HasUSBCharging → hasUSBCharging`.
+
+### Two SSR problems found and fixed
+
+Both came from branching on `isLoading`, which is only ever true during server render:
+
+- The header rendered a blank placeholder instead of the sign-in links, so **a visitor with
+  JavaScript disabled could never reach the sign-in page**. It now renders the signed-out
+  links — real anchors — and swaps to the avatar once the store resolves.
+- The nav was gated entirely, so even the public "Find a car" link was missing from the
+  server HTML. It now filters rather than gates: SSR yields exactly the public links.
+
+### Decisions
+
+- **Submit is not disabled on invalid input.** A disabled button gives no reason. The first
+  attempt reveals what needs fixing; only a clean form spends one of the five requests per
+  minute. Submit *is* disabled while a request is in flight.
+- **`next` is validated against an open redirect.** `//evil.example`, `/\evil.example`,
+  absolute URLs and `javascript:` all collapse to `/`. Sign-in is exactly when a user is
+  least likely to notice being bounced off-site.
+- **The special-character set is spelled out on screen.** It excludes `+` and `=`, which
+  people reach for — "a special character" alone would leave a rejected user guessing.
+
+### Still unverified
+
+Everything needing a live API, unchanged from Phase 1: the real register/login round trip,
+session persistence across a reload, silent refresh, and whether the limiter returns 429 or
+503. The client behaviour behind each is verified against a stub in
+`scripts/verify-client.mts`.
 
 ---
 

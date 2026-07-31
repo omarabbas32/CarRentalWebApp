@@ -68,11 +68,12 @@ Caption 12.5/1.45/400, Label 10.5/640/+0.10em uppercase.
 Set globally:
 
 ```css
-:where(h1, h2, h3, h4) { text-wrap: balance; }
-.tabular { font-variant-numeric: tabular-nums; }
+:where(h1, h2, h3, h4, h5, h6) { text-wrap: balance; }
 ```
 
-`.tabular` goes on every price, odometer, day count and ID.
+Tabular figures go on every price, odometer, day count and ID, and running copy is capped
+near 65ch. Do **not** define custom utilities for either — Tailwind already ships
+`tabular-nums` and `max-w-prose` (`--max-width-prose` is `65ch`).
 
 Do **not** add a webfont. The system stack is deliberate — no CDN, no layout shift.
 

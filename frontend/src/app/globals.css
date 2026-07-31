@@ -218,13 +218,7 @@
   }
 }
 
-@utility tabular {
-  /* Every price, odometer, day count and ID. Digits must not jitter as
-     values change or columns fail to line up. */
-  font-variant-numeric: tabular-nums;
-}
-
-@utility measure {
-  /* Running copy capped near 65ch — DESIGN.md §2. */
-  max-width: 65ch;
-}
+/* DESIGN.md §2 asks for tabular figures on every price, odometer, day count
+   and ID, and running copy capped near 65ch. Both already exist in Tailwind —
+   `tabular-nums` and `max-w-prose` (--max-width-prose is 65ch) — so no custom
+   utility is defined here. Use the built-ins. */

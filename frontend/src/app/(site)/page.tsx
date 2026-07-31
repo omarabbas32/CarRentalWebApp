@@ -31,7 +31,7 @@ export default function Home() {
 
       <div className="mt-10 space-y-3">
         <h1 className="text-display">CarRental</h1>
-        <p className="measure text-muted-foreground">
+        <p className="max-w-prose text-muted-foreground">
           The design system is wired up. Routes, data and screens arrive in the
           phases that follow — see <code>phases/</code> at the repository root.
         </p>
@@ -53,7 +53,7 @@ export default function Home() {
             <p className="text-label uppercase text-muted-foreground">
               Label — overline
             </p>
-            <p className="tabular text-h2">1,284.50 · 17,930 km · 4 days</p>
+            <p className="text-h2 tabular-nums">1,284.50 · 17,930 km · 4 days</p>
           </CardContent>
         </Card>
 

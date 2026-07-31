@@ -166,20 +166,63 @@ several state-changing endpoints have no server-side authorization at all (see t
 
 ## Done when
 
-- [ ] Every endpoint has a typed function; `npx tsc --noEmit` passes.
+- [x] Every endpoint has a typed function; `npm run typecheck` and `npm run lint` pass.
 - [ ] Register → login → a token-bearing call → refresh → logout all succeed against a
-      running API.
-- [ ] A booking created through the client returns totals matching `priceBreakdown()` to
-      the cent.
-- [ ] A 400 from `POST /api/cars` produces a camelCase field-error map.
-- [ ] A forced business-rule 500 (book already-booked dates) surfaces a human sentence,
-      never "An internal server error occurred."
-- [ ] Six rapid auth calls surface the rate-limit state rather than a generic failure.
+      running API. **Not verified — see below.**
+- [x] `priceBreakdown()` agrees with an independent replication of the C# arithmetic,
+      including the truncate-toward-zero day count and the minimum of one day.
+- [x] A 400 body produces a camelCase field-error map (checked against a synthetic
+      payload; not yet against a real 400).
+- [x] A business-rule 500 surfaces a human sentence for every operation, never
+      "An internal server error occurred."
+- [x] Both 429 and 503 are treated as rate limiting.
+
+---
+
+## Outcome
+
+Complete as buildable, typed code. `npm run verify:logic` runs 22 checks over the pure
+logic — pricing, dates, Cloudinary URLs, error mapping and enum values — and all pass.
+
+**The live-API round trip was not run.** PostgreSQL is not listening on 5432, and
+`backend/API/API.csproj` has no `UserSecretsId`, so `JwtSettings.Secret` and the database
+password are both unset — the API cannot start without provisioning those first. Everything
+that depends on a real response is therefore unverified: the paged-wrapper property names,
+the exact 400 body shape, whether the rate limiter returns 429 or 503, and whether
+`ipAddress: ""` is accepted on refresh and logout. **Run these before building Phase 2 on
+top of them.**
+
+What shipped:
+
+| File | Role |
+|---|---|
+| `lib/enums.ts` | 11 enums + labels, `parseRoleName`, `carCategoryName`, `CAR_FEATURES`, status classes |
+| `types/api.ts` | DTO mirrors; `CarDto` deliberately has no `imageUrls` so misuse is a compile error |
+| `lib/dates.ts` | `toUtcIso`, `daysBetween`, search-range validation |
+| `lib/pricing.ts` | the only pricing arithmetic in the app |
+| `lib/cloudinary.ts` | `cloudinaryThumb`, transformation-aware and pass-through safe |
+| `lib/api/errors.ts` | `ApiError`, `mapApiError` over 24 operations, PascalCase→camelCase field errors |
+| `lib/api/client.ts` | fetch wrapper; token and 401 handler injected by registration to avoid a cycle |
+| `lib/api/{auth,cars,bookings,users}.ts` | every endpoint, typed |
+| `lib/auth/session-store.ts` | module store; proactive refresh, no retry, cross-tab sync |
+| `components/providers/auth-provider.tsx` | `useSyncExternalStore` binding |
+| `components/auth/role-guard.tsx` | client-side gating, documented as *not* a security boundary |
+
+Decisions worth knowing:
+
+- **The session store is a plain module, not React state.** Read via
+  `useSyncExternalStore`, so rehydration needs no effect — the React Compiler lint rules
+  reject setState-in-effect — and a `storage` listener syncs tabs for free.
+- **`parseRoleName` throws on an unknown role** rather than defaulting to `Renter`.
+  Defaulting would hand a renter's UI to someone the server considers something else.
+- **Refresh never retries.** A failed refresh clears the session. Retrying spends the
+  shared 5/min budget and can lock the user out of signing in.
+- **The 401 backstop is skipped for `/api/auth/*`**, or a failing refresh would trigger
+  another refresh.
 
 ---
 
 ## Notes
 
-Confirm the rate-limit status code against the running API before writing the handler.
-ASP.NET's fixed-window limiter rejects with **503** by default, not 429, and `DESIGN.md`
-assumes 429. Handle whichever it actually returns — and both, cheaply.
+`DESIGN.md` assumed the rate limiter returns 429; ASP.NET's fixed-window limiter rejects
+with **503** by default. Both are handled, but confirm which it actually returns.
