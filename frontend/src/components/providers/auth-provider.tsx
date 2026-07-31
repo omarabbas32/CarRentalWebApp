@@ -1,50 +1,52 @@
 "use client";
 
-import { createContext, useContext, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
+import {
+  getServerSnapshot,
+  getSnapshot,
+  signIn,
+  signOut,
+  signUp,
+  subscribe,
+  type AuthState,
+  type Session,
+} from "@/lib/auth/session-store";
+import { UserRole } from "@/lib/enums";
 
 /**
- * Phase 0 stub.
+ * React binding over `lib/auth/session-store`.
  *
- * Phase 1 replaces the body of this file with the real session store: the
- * payload from `/api/auth/login` or `/api/auth/register` persisted client-side,
- * plus a proactive refresh timer scheduled off `expiry`. There is no
- * `GET /api/auth/me`, so that response payload is the only source of session
- * state — see phases/phase-1-api-layer.md §9.
+ * The store is a plain module, not context state, so this provider holds no
+ * state of its own — it exists to keep `layout.tsx` composing the way the rest
+ * of the app expects, and so a future change of mechanism has one seam.
  *
- * The shape is deliberately fixed now so that components written against it in
- * the meantime do not need rewriting.
+ * Reading through `useSyncExternalStore` means rehydration needs no effect and
+ * no `mounted` flag, which the React Compiler lint rules would reject anyway.
  */
-export type Session = {
-  userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  /** `AuthenticationResult.role` is a string, unlike every other enum. */
-  role: string;
-  token: string;
-  refreshToken: string;
-  expiry: string;
-};
-
-type AuthContextValue = {
-  session: Session | null;
-  /** False while the persisted session is being rehydrated on mount. */
-  isLoading: boolean;
-};
-
-const AuthContext = createContext<AuthContextValue>({
-  session: null,
-  isLoading: false,
-});
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  return (
-    <AuthContext.Provider value={{ session: null, isLoading: false }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <>{children}</>;
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
+export function useAuth(): AuthState & {
+  signIn: typeof signIn;
+  signUp: typeof signUp;
+  signOut: typeof signOut;
+} {
+  const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return { ...state, signIn, signUp, signOut };
 }
+
+/** The signed-in user, or null. Convenience over `useAuth().session`. */
+export function useSession(): Session | null {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot).session;
+}
+
+export function useHasRole(...roles: UserRole[]): boolean {
+  const session = useSession();
+  return session !== null && roles.includes(session.role);
+}
+
+/** Admin and Staff share every workbench surface the API grants them. */
+export const STAFF_ROLES = [UserRole.Admin, UserRole.Staff] as const;
+
+export type { Session };

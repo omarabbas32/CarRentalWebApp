@@ -48,7 +48,7 @@ the http profile.
 | `POST` | `/api/auth/login` | public | `AuthenticationResult` |
 | `POST` | `/api/auth/refresh` | public | `AuthenticationResult` |
 | `POST` | `/api/auth/logout` | public | `204` |
-| `GET` | `/api/cars/search` | public | `{ items, pageNumber, pageSize, totalCount, … }` of `CarSearchResultDto` |
+| `GET` | `/api/cars/search` | public | `{ cars, totalCount, pageNumber, pageSize, totalPages }` |
 | `GET` | `/api/cars` | public | `CarDto[]`, unpaginated |
 | `GET` | `/api/cars/{id}` | public | `CarDto` — **no images** |
 | `POST` | `/api/cars` | Owner, Admin, Staff | `201` + car `Guid` |
@@ -57,7 +57,7 @@ the http profile.
 | `POST` | `/api/cars/{id}/images` | **public** | image `Guid` |
 | `DELETE` | `/api/cars/images/{imageId}` | **public** | `204` |
 | `POST` | `/api/bookings` | Renter, Admin, Staff | booking `Guid` |
-| `GET` | `/api/bookings` | **public** | paged `BookingDto` |
+| `GET` | `/api/bookings` | **public** | `{ bookings, totalCount, pageNumber, pageSize, totalPages }` |
 | `GET` | `/api/bookings/{id}` | **public** | `BookingDto` |
 | `POST` | `/api/bookings/{id}/cancel` | Renter, Admin, Staff | `204` |
 | `POST` | `/api/bookings/{id}/start` | Owner, Admin, Staff | `204` |
@@ -90,6 +90,26 @@ The frontend must still gate these in the UI; it just cannot rely on the server 
 Business-rule failures throw plain `Exception` — "Car is not available for the selected
 dates.", "Booking is already cancelled." — so they arrive as a **generic 500 with no
 detail**. The client must supply the human message from operation context.
+
+**Not every "not found" is a 404.** `GetCarById`, `UpdateCar` and `DeleteCar` throw plain
+`Exception` rather than `NotFoundException`, so a **missing car returns 500**. Users and
+bookings use the typed exception and do return 404. A car detail page therefore cannot tell
+"no such car" from "server broke" — see [known defects](README.md#known-backend-defects).
+
+The full list of business-rule 500s, from the handler source:
+
+| Operation | Server message (never shown to the user) |
+|---|---|
+| register | "User with this email already exists." |
+| login | "Invalid email or password." |
+| refresh | "Invalid token." |
+| create booking | "Car is not available for the selected dates." |
+| cancel booking | "Booking is already cancelled." / "Completed bookings cannot be cancelled." |
+| start trip | "Trip can only be started for Confirmed or Pending bookings." |
+| end trip | "Trip can only be ended for InProgress bookings." |
+| upload image / document | "Image upload failed." / "Document upload failed." |
+| process verification | "No verification record found for this user." |
+| get / update / delete car | "Car with ID {id} not found." |
 
 The `400` body maps directly onto form fields: keys are PascalCase C# property names.
 
@@ -219,8 +239,17 @@ Found while verifying the API. None block the frontend; all are worth an issue.
 - **Overlap check misses the enclosing case.** `CreateBookingCommandHandler.cs:41` tests
   `(start >= b.Start && start < b.End) || (end > b.Start && end <= b.End)`. A requested
   range that strictly contains an existing booking satisfies neither clause and is accepted.
-  The standard predicate is `start < b.End && end > b.Start`.
-- **`Completed` bookings still block availability** — the check excludes only `Cancelled`.
+  The standard predicate is `start < b.End && end > b.Start` — which
+  `SearchCarsQueryHandler.cs:52` already uses correctly. The two disagree.
+- **Search and booking-create disagree on what blocks a car.** Search excludes only
+  `Confirmed` and `InProgress`; create excludes everything except `Cancelled`. A car with a
+  `Pending` booking therefore **appears available in search and is refused at checkout** —
+  the user hits "Those dates were just taken" on a car the site just offered them. This is
+  the most user-visible of the defects here.
+- **`Completed` bookings still block creation** — that check excludes only `Cancelled`.
+- **Three car handlers return 500 instead of 404.** `GetCarById`, `UpdateCar` and
+  `DeleteCar` throw plain `Exception` for a missing car where every user and booking handler
+  throws `NotFoundException`.
 - **`MileageLimit` is never copied from `car.DailyMileageLimit`** at booking creation, so
   the extra-mileage branch is dead code and the line always renders zero.
 - **No `[Authorize]` on several state-changing use cases** — car image upload and delete,
