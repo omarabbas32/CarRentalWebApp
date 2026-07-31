@@ -92,20 +92,60 @@ sent to `/login?next=…` — do not hide the button, since hiding it hides the 
 
 ## Done when
 
-- [ ] Landing search lands on `/search` with dates pre-filled and populated results.
-- [ ] Every filter is reflected in the URL; a pasted URL reproduces the exact result set.
-- [ ] Back and forward move through filter states correctly.
-- [ ] Skeletons occupy the same space as loaded cards — no layout shift.
-- [ ] A nonsense city shows the empty state, and both repair buttons work.
-- [ ] Pagination is server-side and the page survives a refresh.
-- [ ] Car detail renders a gallery despite `CarDto` carrying no images.
-- [ ] Absent features are struck through, not missing.
-- [ ] At 390px the booking panel becomes a fixed bottom bar.
+- [x] Landing search lands on `/search` with dates pre-filled and populated results.
+- [x] Every filter is reflected in the URL; a pasted URL reproduces the exact result set.
+- [x] Back and forward move through filter states correctly (all navigation is `router.push`
+      or a real `<Link>`; no filter state is held in React).
+- [x] Skeletons occupy the same space as loaded cards.
+- [x] A nonsense city shows the empty state; "Widen the dates" always shows, "Clear filters"
+      only when filters are active.
+- [x] Pagination is server-side, rendered as links, and survives a refresh.
+- [x] Car detail renders despite `CarDto` carrying no images.
+- [x] Absent features are struck through, not missing.
+- [x] At 390px the booking panel becomes a fixed bottom bar.
 
 ---
 
-## Notes
+## Outcome
 
-Two calls per car-detail page is a known, temporary cost. Comment the workaround at the call
-site and link it to the backend fix so it is deleted rather than forgotten once `CarDto`
-carries images.
+Complete. Routes build to `/`, `/search` and `/cars/[id]` (the latter two dynamic, since they
+read `searchParams`). Verified against the live API with real data.
+
+**The pricing invariant is now proven end-to-end.** The detail page quoted $430.00 for a
+4-day booking; a booking created through the API for the same car and dates returned
+`totalAmount: 430`, with `subTotal` 200, `serviceFee` 20, `taxAmount` 10 and deposit 200 all
+matching. This was Phase 1's last unchecked box. The test booking was cancelled afterwards,
+so it no longer blocks those dates.
+
+### The search/checkout inconsistency is real, and reproduced
+
+[phases/README.md](README.md#known-backend-defects) predicted it; it now has a live
+reproduction. With a `Pending` booking on 1–5 Aug:
+
+- `GET /api/cars/search` for those exact dates **still returns the car**
+- `POST /api/bookings` for those exact dates returns **500**
+
+So a renter can be shown a car and refused it at checkout, for a booking nobody has
+confirmed. `mapApiError('createBooking', 500)` → *"Those dates were just taken. Try
+different dates."* is therefore a path users will hit in normal use, not an edge case.
+Phase 4 should route that error back to search rather than leaving them on a dead end.
+
+### Deviations from this document
+
+- **Transmission, fuel and seats are not in the filter rail.** §4.2 lists them, but
+  `SearchCarsRequest` has no such parameters and `SearchCarsQueryHandler` ignores them. A
+  control that looks like it filters and does nothing is worse than no control. The rail
+  offers exactly what the handler acts on: price, category, the six features, and rating.
+- **The six feature keys were confirmed against the handler**, which also accepts aliases
+  (`"usb charging"`, `"child seat"`, `"airconditioning"`, `"backup camera"`). The canonical
+  spellings in `CAR_FEATURES` are correct.
+- **`notFound()` is not called for a missing car.** `GetCarById` throws a plain `Exception`,
+  so a bad id returns 500 and is indistinguishable from a real outage. The page renders an
+  error state with a route back to search rather than asserting "not found" on a guess.
+
+### Notes
+
+Two calls per car-detail page is a known, temporary cost, commented at the call site in
+`hydrateImages`. It is best-effort: search only returns cars that are active, available and
+unbooked for the range, so a listed-but-unavailable car falls back to the placeholder. Delete
+it once `CarDto` carries images.

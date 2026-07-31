@@ -146,12 +146,16 @@ Both came from branching on `isLoading`, which is only ever true during server r
 - **The special-character set is spelled out on screen.** It excludes `+` and `=`, which
   people reach for — "a special character" alone would leave a rejected user guessing.
 
-### Still unverified
+### Verified against the live API
 
-Everything needing a live API, unchanged from Phase 1: the real register/login round trip,
-session persistence across a reload, silent refresh, and whether the limiter returns 429 or
-503. The client behaviour behind each is verified against a stub in
-`scripts/verify-client.mts`.
+Register → login → refresh → logout all round-trip successfully, `ipAddress: ""` is
+accepted, and the rate limiter was confirmed to return **503** (see
+[Phase 1's outcome table](phase-1-api-layer.md#outcome)). The network-error path was also
+confirmed in a real browser: with the API down, the register form showed
+"Can't reach the server…" rather than leaking an error.
+
+Still to confirm by hand in the browser: session persistence across a hard reload and a
+silent refresh at the 59-minute mark.
 
 ---
 

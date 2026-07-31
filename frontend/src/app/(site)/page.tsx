@@ -1,102 +1,129 @@
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Suspense } from "react";
+import { CarCard, CarCardSkeleton } from "@/components/cars/car-card";
+import { SearchBar } from "@/components/search/search-bar";
+import { searchCars } from "@/lib/api/cars";
+import { defaultSearchRange } from "@/lib/dates";
+import { CarCategory, carCategoryLabel } from "@/lib/enums";
+import { searchHref } from "@/lib/search-params";
 
-/**
- * Phase 0 placeholder. Phase 3 replaces this with the real landing page.
- *
- * It exists to prove the token layer works: every colour here comes from a
- * CSS variable, so toggling the theme must restyle the whole page without a
- * single component branching on theme.
- */
-
-const STATUSES = [
-  { label: "Pending", fg: "text-status-pending", bg: "bg-status-pending-bg" },
-  { label: "Confirmed", fg: "text-status-confirmed", bg: "bg-status-confirmed-bg" },
-  { label: "In progress", fg: "text-status-inprogress", bg: "bg-status-inprogress-bg" },
-  { label: "Completed", fg: "text-status-completed", bg: "bg-status-completed-bg" },
-  { label: "Cancelled", fg: "text-status-cancelled", bg: "bg-status-cancelled-bg" },
+/** Deep links into the same search the results page runs. */
+const FEATURED_CATEGORIES = [
+  CarCategory.Economy,
+  CarCategory.SUV,
+  CarCategory.Luxury,
+  CarCategory.Convertible,
+  CarCategory.Minivan,
+  CarCategory.Pickup,
 ];
 
 export default function Home() {
+  // Tomorrow → +3 days. Both dates are required by the API, so the hero is
+  // never in a state that cannot be submitted.
+  const range = defaultSearchRange();
+
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 py-12 lg:px-12">
-      <header className="flex items-center justify-between">
-        <span className="text-label uppercase text-muted-foreground">
-          Phase 0 · scaffold
-        </span>
-        <ThemeToggle />
-      </header>
-
-      <div className="mt-10 space-y-3">
-        <h1 className="text-display">CarRental</h1>
-        <p className="max-w-prose text-muted-foreground">
-          The design system is wired up. Routes, data and screens arrive in the
-          phases that follow — see <code>phases/</code> at the repository root.
-        </p>
-      </div>
-
-      <div className="mt-12 grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-h2">Type scale</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-h1">H1 — Find a car</p>
-            <p className="text-h2">H2 — Section heading</p>
-            <p className="text-h3">H3 — Subsection</p>
-            <p className="text-body">Body — running copy at 14/1.5.</p>
-            <p className="text-caption text-muted-foreground">
-              Caption — supporting detail.
+    <>
+      <section className="border-b bg-gradient-to-b from-primary/6 to-transparent">
+        <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:px-12 lg:py-24">
+          <div className="max-w-prose space-y-4">
+            <h1 className="text-display">Someone nearby has the car you need.</h1>
+            <p className="text-muted-foreground">
+              Rent from people in your city, by the day. No counters, no queues.
             </p>
-            <p className="text-label uppercase text-muted-foreground">
-              Label — overline
+          </div>
+
+          <SearchBar
+            initial={{ city: "", start: range.start, end: range.end, features: [], page: 1 }}
+            className="mt-8 max-w-4xl"
+          />
+
+          <nav aria-label="Browse by category" className="mt-6 flex flex-wrap gap-2">
+            {FEATURED_CATEGORIES.map((category) => (
+              <Link
+                key={category}
+                href={searchHref({ category, start: range.start, end: range.end })}
+                className="rounded-full border px-3 py-1.5 text-caption text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {carCategoryLabel[category]}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-6 py-14 lg:px-12">
+        <div className="flex items-end justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-h1">Free on your dates</h2>
+            <p className="text-caption tabular-nums text-muted-foreground">
+              Available {range.start.toLocaleDateString()} – {range.end.toLocaleDateString()}
             </p>
-            <p className="text-h2 tabular-nums">1,284.50 · 17,930 km · 4 days</p>
-          </CardContent>
-        </Card>
+          </div>
+          <Link
+            href={searchHref({ start: range.start, end: range.end })}
+            className="text-body underline underline-offset-4"
+          >
+            See all
+          </Link>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-h2">Colour</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="flex flex-wrap items-center gap-3">
-              <Button>Primary action</Button>
-              <Button variant="secondary">Secondary</Button>
-              <Button variant="outline">Outline</Button>
-              <Button variant="ghost">Ghost</Button>
-            </div>
+        <Suspense fallback={<FeaturedSkeleton />}>
+          <Featured />
+        </Suspense>
+      </section>
+    </>
+  );
+}
 
-            <div className="space-y-2">
-              <p className="text-label uppercase text-muted-foreground">
-                Booking status
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {STATUSES.map((s) => (
-                  <span
-                    key={s.label}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-medium ${s.bg} ${s.fg}`}
-                  >
-                    <span className="size-1.5 rounded-full bg-current" aria-hidden />
-                    {s.label}
-                  </span>
-                ))}
-              </div>
-              <p className="text-caption text-muted-foreground">
-                Dot + label + background. Colour is never the only signal.
-              </p>
-            </div>
+/**
+ * There is no featured endpoint. These come from the same `/api/cars/search`
+ * call the results page makes — inventing a separate concept would mean
+ * inventing a second source of truth for what is available.
+ */
+async function Featured() {
+  const range = defaultSearchRange();
 
-            <div className="flex flex-wrap gap-2">
-              <Badge>Badge</Badge>
-              <Badge variant="secondary">Secondary</Badge>
-              <Badge variant="outline">Outline</Badge>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+  // Only the fetch is guarded. JSX must not be constructed inside try/catch:
+  // React renders it later, so a render-time error would escape this handler
+  // anyway — and the lint rules reject the pattern for exactly that reason.
+  let result;
+  try {
+    result = await searchCars({
+      start: range.start,
+      end: range.end,
+      pageNumber: 1,
+      pageSize: 6,
+    });
+  } catch {
+    // The landing page is not the place to explain a backend outage — the
+    // search page surfaces the real error. Here the section steps aside.
+    return null;
+  }
+
+  if (result.cars.length === 0) {
+    return (
+      <p className="mt-8 rounded-xl border border-dashed px-6 py-12 text-center text-muted-foreground">
+        No cars are listed for these dates yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      {result.cars.map((car) => (
+        <CarCard key={car.id} car={car} search={range} />
+      ))}
+    </div>
+  );
+}
+
+function FeaturedSkeleton() {
+  return (
+    <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 3 }, (_, i) => (
+        <CarCardSkeleton key={i} />
+      ))}
+    </div>
   );
 }
