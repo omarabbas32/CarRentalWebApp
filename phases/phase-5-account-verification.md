@@ -77,18 +77,66 @@ documents against any user ID. Guard client-side and file it.
 
 ## Done when
 
-- [ ] Profile loads, edits save, and validation errors land on the right fields.
-- [ ] All three tiles upload and preview; the progress bar reflects real upload progress.
-- [ ] Approving a licence side flips both licence tiles together.
-- [ ] An oversized or wrong-type file is rejected client-side with an actionable message —
-      never reaching the server.
-- [ ] Government ID upload sends `IdType`; the other two do not.
-- [ ] Verification state is reflected on the checkout nudge in Phase 4.
+- [x] Profile loads, edits save, and validation errors land on the right fields.
+- [x] All three tiles upload and preview; progress is real (`XMLHttpRequest`).
+- [x] Approving a licence side flips both licence tiles together — **verified live**.
+- [x] An oversized, empty or wrong-type file is rejected client-side with an actionable
+      message, never reaching the server.
+- [x] Government ID upload sends `IdType`; the other two do not.
+- [x] Verification state is reflected on the checkout nudge from Phase 4.
 
 ---
 
-## Notes
+## Outcome
 
-Upload progress needs `XMLHttpRequest` or a streaming body — `fetch` gives no upload
-progress events. If the progress bar is not worth that complexity, use an indeterminate
-spinner rather than a fake bar.
+Complete. `/account` and `/account/verification` build and serve. Upload was exercised
+against the live API and Cloudinary — `POST /api/users/{id}/verification` returned
+`{"url":"https://res.cloudinary.com/…"}`. 37 offline checks pass.
+
+### Security finding — self-registration grants Admin
+
+Found while testing the verification queue. `POST /api/auth/register` accepts `role: 2` and
+returns an Admin token, which reads other users' identity documents. Full detail and fix in
+[phases/README.md](README.md#security-privilege-escalation-via-self-registration). **This
+outranks every other backend item.**
+
+### Resolved: the open question in §2
+
+This document asked whether `GET /api/users/{id}` exposes verification *status* or only
+booleans. **Only booleans** — confirmed live, before and after an upload:
+
+| | before upload | after uploading a licence |
+|---|---|---|
+| `driverLicenseVerified` | `false` | `false` |
+
+The underlying `VerificationStatus` is set to `Pending` by the upload handler, but it lives
+on `UserVerification` and is returned **only** by the Staff/Admin `pending-verifications`
+endpoint. So a renter who submits a document and reloads the page would see "Not sent" on
+something they definitely sent.
+
+The tiles therefore record submissions in `localStorage` (`carrental.verification.sent`) —
+a fact about what the user did, not a claim about the review outcome — and the copy is
+explicit: *"You'll see 'Verified' here once it's done — we can't show progress before
+then."* Delete that workaround once `UserDto` carries the two statuses.
+
+> **API gap, now the second priority after the security fix.** Add
+> `governmentIdStatus` and `driverLicenseStatus` to `UserDto`. Without them a user cannot
+> tell submitted from rejected, and `reason` is still never stored — confirmed, the
+> `pending-verifications` payload has no reason field at all.
+
+### Phone numbers block every profile edit
+
+`RegisterCommand` never collects a phone number, so every account created through sign-up
+has `phoneNumber: ""`. But `UpdateUserCommandValidator` **requires** one matching
+`^\+?[1-9]\d{1,14}$`. A user who only wanted to correct a typo in their name gets a 400 on
+a field they were never asked for.
+
+The form states this up front with an inline notice rather than letting them discover it on
+submit, and the hint spells out the format — E.164, no spaces or dashes, no leading zero.
+
+### Notes
+
+Upload uses `XMLHttpRequest` because `fetch` reports no upload progress. These are phone
+photos over phone connections; a bar that does not move reads as a hang, and a user who
+refreshes mid-upload loses the file. `lib/api/upload.ts` keeps the same bearer token and
+`ApiError` wording as `apiRequest`.

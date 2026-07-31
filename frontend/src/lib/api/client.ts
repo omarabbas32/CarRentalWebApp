@@ -38,6 +38,16 @@ export function registerTokenProvider(provider: TokenProvider) {
   getToken = provider;
 }
 
+/** For the XHR upload path, which cannot go through `apiRequest`. */
+export function currentAuthToken(): string | null {
+  return getToken();
+}
+
+/** Exposed for the same reason — see `lib/api/upload.ts`. */
+export function apiUrl(path: string): string {
+  return `${baseUrl()}${path}`;
+}
+
 /**
  * Backstop for a 401. Refresh is proactive — scheduled off `expiry` — so this
  * should rarely fire; it exists because `UnauthorizedAccessException` does map
