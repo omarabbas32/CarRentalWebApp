@@ -184,13 +184,22 @@ several state-changing endpoints have no server-side authorization at all (see t
 Complete as buildable, typed code. `npm run verify:logic` runs 22 checks over the pure
 logic — pricing, dates, Cloudinary URLs, error mapping and enum values — and all pass.
 
-**The live-API round trip was not run.** PostgreSQL is not listening on 5432, and
-`backend/API/API.csproj` has no `UserSecretsId`, so `JwtSettings.Secret` and the database
-password are both unset — the API cannot start without provisioning those first. Everything
-that depends on a real response is therefore unverified: the paged-wrapper property names,
-the exact 400 body shape, whether the rate limiter returns 429 or 503, and whether
-`ipAddress: ""` is accepted on refresh and logout. **Run these before building Phase 2 on
-top of them.**
+**Verified against the live API** (2026-07-31, API on `http://localhost:5071`). Every
+assumption this phase was built on now has a real response behind it:
+
+| Assumption | Result |
+|---|---|
+| `AuthenticationResult` shape | ✅ exactly `token, refreshToken, expiry, userId, email, firstName, lastName, role` |
+| `role` is a string, not an int | ✅ `"Owner"` |
+| Search wrapper is `{ cars, … }` | ✅ `cars, totalCount, pageNumber, pageSize, totalPages` |
+| Bookings wrapper is `{ bookings, … }` | ✅ same five keys |
+| `imageUrls` only on the search DTO | ✅ present there, and `vin` is absent — matches `types/api.ts` |
+| Enums are ints in responses | ✅ `transmission: 1`, `category: 3` |
+| 400 body is `{ errors: { Key: [msg] } }` | ✅ `{"errors":{"SearchCarsQuery":["Start date must be before end date"]}}` |
+| `ipAddress: ""` accepted on refresh | ✅ 200, and the refresh token rotates |
+| `ipAddress: ""` accepted on logout | ✅ 204 |
+| Rate limiter status code | ⚠️ **503, not 429** — see [rate limiting](README.md#rate-limiting) |
+| Bad credentials | ✅ generic 500, as designed for |
 
 What shipped:
 
