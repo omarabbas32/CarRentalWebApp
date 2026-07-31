@@ -235,6 +235,44 @@ variant, which also paints correctly on the first frame.
 
 ---
 
+## Security: privilege escalation via self-registration
+
+**Anyone can make themselves an Admin.** Reproduced against the running API on 2026-07-31.
+
+`RegisterCommandValidator` validates `Role` with `IsInEnum()`, and `UserRole` contains
+`Admin = 2` and `Staff = 3`. `POST /api/auth/register` is public and unauthenticated, so the
+role is simply whatever the caller asks for:
+
+```bash
+curl -X POST http://localhost:5071/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"x@example.com","password":"Passw0rd!","firstName":"X","lastName":"Y","role":2}'
+# -> 200, {"role":"Admin", "token":"..."}
+```
+
+That token then opens every Staff/Admin surface. `GET /api/users/pending-verifications`
+returned other users' **passport and driving-licence image URLs**, and
+`POST /api/users/{id}/process-verification` and `DELETE /api/users/{id}` become available.
+
+The frontend only ever offers Renter and Owner, but that is cosmetic — the API accepts any
+value regardless of what the UI sends.
+
+**Fix**, in `RegisterCommandValidator`:
+
+```csharp
+RuleFor(v => v.Role)
+    .Must(r => r == UserRole.Renter || r == UserRole.Owner)
+    .WithMessage("You can register as a renter or an owner.");
+```
+
+Admin and Staff accounts should be provisioned, not self-served. This outranks every other
+item on the backend list.
+
+> A test account created during this verification was granted `Admin` on the local dev
+> database. Remove it when convenient.
+
+---
+
 ## Known backend defects
 
 Found while verifying the API. None block the frontend; all are worth an issue.
