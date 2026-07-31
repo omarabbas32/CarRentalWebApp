@@ -50,6 +50,12 @@ public class ExceptionHandlingMiddleware
                 code = HttpStatusCode.Forbidden;
                 result = JsonSerializer.Serialize(new { error = "You do not have permission to perform this action." });
                 break;
+            // A refused-but-legitimate request. The message is written for the
+            // caller and is passed through, unlike the generic 500 below.
+            case ConflictException conflictException:
+                code = HttpStatusCode.Conflict;
+                result = JsonSerializer.Serialize(new { error = conflictException.Message });
+                break;
             default:
                 _logger.LogError(exception, "An unhandled exception has occurred.");
                 result = JsonSerializer.Serialize(new { error = "An internal server error occurred." });

@@ -94,11 +94,17 @@ Rehydrate from storage on mount, re-arm the proactive refresh timer against the 
 
 ## Done when
 
-- [ ] Register with a valid password → signed in and landed on `/`. **Needs a running API.**
+- [x] Register with a valid password → signed in and landed on `/`. *(Phase 8: `verify:live`
+      proves register returns a usable session and that its token opens a guarded call. The
+      landing redirect itself is client routing, exercised by hand.)*
 - [x] Every password rule lights up independently while typing, and the accepted
       special-character set matches the validator's character class exactly.
-- [ ] A hard refresh keeps the user signed in. **Needs a running API.**
-- [ ] A token left to expire refreshes silently. **Needs a running API.**
+- [x] A hard refresh keeps the user signed in. *(Phase 8: the 390px sweep injects only
+      `carrental.session` into `localStorage` and every guarded route renders its real
+      content — which is precisely the rehydration path a hard refresh takes.)*
+- [ ] A token left to expire refreshes silently. **Still not verified.** `verify:live`
+      proves `refresh` rotates the token and that the rotated one works, but not that the
+      *scheduled* timer fires unattended — that needs a session left idle for an hour.
 - [x] The rate-limit response gets its own message and presentation, for 429 and 503.
 - [x] A signed-out visit to a guarded route redirects to login and returns afterwards
       (`safeNext` verified; the round trip needs a guarded page, which arrives in Phase 3).

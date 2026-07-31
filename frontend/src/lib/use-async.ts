@@ -45,12 +45,22 @@ export function useAsync<T>(
         if (cancelled) return;
         setState({
           status: "error",
+          // Anything that is not an `ApiError` never reached the request layer
+          // — a bug in the fetcher, or a thrown non-Error. It gets a neutral
+          // wrapper so callers can rely on the state's shape.
+          //
+          // The operation is `"unknown"` rather than a real one: this used to
+          // say `"getBookings"`, which meant reading `error.operation` on any
+          // other screen gave a confidently wrong answer. `isNetworkError` is
+          // false because the request layer never ran — an unreachable server
+          // produces a real `ApiError` above, and conflating the two would put
+          // "check your connection" on what is actually a bug.
           error:
             cause instanceof ApiError
               ? cause
               : new ApiError({
                   status: 0,
-                  operation: "getBookings",
+                  operation: "unknown",
                   message: "Something went wrong. Try again.",
                 }),
         });

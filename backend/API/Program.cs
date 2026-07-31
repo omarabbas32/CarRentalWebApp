@@ -129,6 +129,30 @@ builder.Services.AddScoped<IAppDbContext>(provider => provider.GetRequiredServic
 
 var app = builder.Build();
 
+// Provision the first administrator. Does nothing unless Seed:Admin:Email and
+// Seed:Admin:Password are both configured, so this is safe to leave enabled in
+// every environment. See Infrastructure/Data/DbSeeder.cs.
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var seedLogger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Seed");
+
+    try
+    {
+        await DbSeeder.SeedAdminAsync(
+            services.GetRequiredService<AppDbContext>(),
+            services.GetRequiredService<IPasswordHasher>(),
+            builder.Configuration,
+            seedLogger);
+    }
+    catch (Exception ex)
+    {
+        // A database that is unreachable or un-migrated must not stop the API
+        // from starting — the failure is logged and the app carries on.
+        seedLogger.LogError(ex, "Admin seeding failed.");
+    }
+}
+
 if (allowedOrigins.Length == 0)
 {
     app.Logger.LogWarning(

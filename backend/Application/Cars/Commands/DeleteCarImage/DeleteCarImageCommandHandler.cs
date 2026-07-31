@@ -1,6 +1,8 @@
 using MediatR;
 using Application.Common.Interfaces;
 using Application.Common.Exceptions;
+using Application.Common.Models;
+using Application.Common.Security;
 using Domain.Car;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,11 +12,16 @@ public class DeleteCarImageCommandHandler : IRequestHandler<DeleteCarImageComman
 {
     private readonly IAppDbContext _context;
     private readonly ICloudinaryService _cloudinaryService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public DeleteCarImageCommandHandler(IAppDbContext context, ICloudinaryService cloudinaryService)
+    public DeleteCarImageCommandHandler(
+        IAppDbContext context,
+        ICloudinaryService cloudinaryService,
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _cloudinaryService = cloudinaryService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Unit> Handle(DeleteCarImageCommand request, CancellationToken cancellationToken)
@@ -25,29 +32,42 @@ public class DeleteCarImageCommandHandler : IRequestHandler<DeleteCarImageComman
         if (carImage == null)
             throw new NotFoundException(nameof(CarImage), request.ImageId);
 
-        // Extract public ID from URL (Cloudinary logic)
-        // URL format: https://res.cloudinary.com/cloudname/image/upload/v12345/folder/public_id.jpg
-        var publicId = GetPublicIdFromUrl(carImage.ImageUrl);
+        var car = await _context.Cars
+            .FirstOrDefaultAsync(c => c.Id == carImage.CarId, cancellationToken);
+
+        if (car == null)
+            throw new NotFoundException(nameof(Car), carImage.CarId);
+
+        CarOwnership.EnsureCanManage(car, _currentUserService);
+
+        var publicId = CloudinaryPublicId.FromUrl(carImage.ImageUrl);
 
         if (!string.IsNullOrEmpty(publicId))
         {
             await _cloudinaryService.DeleteImageAsync(publicId);
         }
 
+        var wasPrimary = carImage.IsPrimary;
         _context.CarImages.Remove(carImage);
+
+        // Deleting the cover would otherwise leave the car with none, and
+        // SearchCarsQueryHandler orders on IsPrimary — so the gallery's first
+        // photo would silently become whichever row happened to sort first.
+        if (wasPrimary)
+        {
+            var replacement = await _context.CarImages
+                .Where(i => i.CarId == car.Id && i.Id != carImage.Id)
+                .OrderBy(i => i.DisplayOrder)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (replacement != null)
+            {
+                replacement.IsPrimary = true;
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
-    }
-
-    private string GetPublicIdFromUrl(string url)
-    {
-        // Simple logic to extract public id after '/upload/' and version tag
-        // Note: This might need to be more robust depending on folder structure
-        var parts = url.Split('/');
-        var fileName = parts.Last();
-        var publicIdWithExt = string.Join("/", parts.SkipWhile(p => p != "upload").Skip(2));
-        var publicId = publicIdWithExt.Split('.').First();
-        return publicId;
     }
 }

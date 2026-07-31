@@ -54,7 +54,15 @@ public class GetCarsQueryHandler : IRequestHandler<GetCarsQuery, List<CarDto>>
                 car.AverageRating,
                 car.TotalReviews,
                 car.TotalTrips,
-                car.CreatedAt
+                car.CreatedAt,
+                // Same ordering as SearchCarsQueryHandler: primary first, then
+                // display order. Projected inside the query, so this stays one
+                // round trip rather than one per car.
+                car.Images
+                    .OrderByDescending(i => i.IsPrimary)
+                    .ThenBy(i => i.DisplayOrder)
+                    .Select(i => new CarImageDto(i.Id, i.ImageUrl, i.ImageType, i.IsPrimary, i.DisplayOrder))
+                    .ToList()
             ))
             .ToListAsync(cancellationToken);
 

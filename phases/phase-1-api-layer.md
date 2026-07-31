@@ -167,8 +167,8 @@ several state-changing endpoints have no server-side authorization at all (see t
 ## Done when
 
 - [x] Every endpoint has a typed function; `npm run typecheck` and `npm run lint` pass.
-- [ ] Register → login → a token-bearing call → refresh → logout all succeed against a
-      running API. **Not verified — see below.**
+- [x] Register → login → a token-bearing call → refresh → logout all succeed against a
+      running API. *(Phase 8: `npm run verify:live` drives all five in order.)*
 - [x] `priceBreakdown()` agrees with an independent replication of the C# arithmetic,
       including the truncate-toward-zero day count and the minimum of one day.
 - [x] A 400 body produces a camelCase field-error map (checked against a synthetic
@@ -201,12 +201,22 @@ assumption this phase was built on now has a real response behind it:
 | Rate limiter status code | ⚠️ **503, not 429** — see [rate limiting](README.md#rate-limiting) |
 | Bad credentials | ✅ generic 500, as designed for |
 
+**Closed out in Phase 8.** The full token lifecycle now runs in `verify:live` rather than
+being spot-checked by hand: register → login → a bearer call → refresh → logout, ending
+with an assertion that the revoked refresh token is refused.
+
+That addition is also where the rate limiter stopped being a footnote. The suite spends
+three of its five-per-minute `/api/auth` requests on registrations, so refresh and logout
+came back as the limiter's 503 rather than being tested at all. The script now waits the
+window out before the token-lifecycle group, with the reason written next to the wait —
+it is the one place in the suite that proves the limit is real.
+
 What shipped:
 
 | File | Role |
 |---|---|
 | `lib/enums.ts` | 11 enums + labels, `parseRoleName`, `carCategoryName`, `CAR_FEATURES`, status classes |
-| `types/api.ts` | DTO mirrors; `CarDto` deliberately has no `imageUrls` so misuse is a compile error |
+| `types/api.ts` | DTO mirrors. `CarDto` had no images at all until Phase 6 extended the backend DTO; it now carries `CarImageDto[]`, ids included |
 | `lib/dates.ts` | `toUtcIso`, `daysBetween`, search-range validation |
 | `lib/pricing.ts` | the only pricing arithmetic in the app |
 | `lib/cloudinary.ts` | `cloudinaryThumb`, transformation-aware and pass-through safe |

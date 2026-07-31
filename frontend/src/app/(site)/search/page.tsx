@@ -80,6 +80,10 @@ async function Results({ state }: { state: SearchState }) {
       <ErrorState
         title={error?.isValidation ? "That search isn't valid" : "We couldn't run that search"}
         message={error?.message ?? "Something went wrong. Try again."}
+        error={error ?? undefined}
+        // A validation error is the query's fault and will fail again
+        // identically; everything else is worth one more attempt.
+        retry={error?.isValidation ? undefined : "refresh"}
       />
     );
   }
