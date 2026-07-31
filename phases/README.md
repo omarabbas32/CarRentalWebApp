@@ -161,8 +161,11 @@ before submit matches the booking that comes back.
 
 A fixed-window limiter of **5 requests per minute shared across the whole `/api/auth`
 surface** — login, register, refresh and logout compete for one budget, `QueueLimit = 0`.
-Exceeding it returns `503` by default, not `429`; confirm which against the running API and
-handle both.
+
+**Verified against the running API: it returns `503`, not `429`.** Eight rapid login
+attempts produced `500 500 500 500 503 503 503 503` — the first four are the business-rule
+failure for bad credentials, then the limiter takes over from the fifth. `DESIGN.md`
+assumed 429; the client treats both as rate limiting.
 
 ---
 
