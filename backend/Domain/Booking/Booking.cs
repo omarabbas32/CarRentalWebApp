@@ -54,6 +54,15 @@ namespace Domain.Booking
         public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
         public virtual TripInspection? PickupInspection { get; set; }
         public virtual TripInspection? ReturnInspection { get; set; }
-        public virtual Review? Review { get; set; }
+
+        /// <summary>
+        /// At most two: one per <see cref="ReviewType"/>.
+        /// </summary>
+        /// <remarks>
+        /// This was a single `Review?`, which made EF put a `ReviewId` column on Bookings —
+        /// the dependent end was on the wrong side, and it could only ever have held one of
+        /// the two reviews a trip produces.
+        /// </remarks>
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
     }
 }

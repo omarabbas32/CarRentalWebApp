@@ -47,6 +47,23 @@ export type ApiOperation =
   | "uploadVerificationDocument"
   | "getPendingVerifications"
   | "processVerification"
+  // messages
+  | "sendMessage"
+  | "getThreads"
+  | "getBookingMessages"
+  | "markThreadRead"
+  | "getUnreadMessageCount"
+  // reviews
+  | "createReview"
+  | "deleteReview"
+  | "getCarReviews"
+  | "getUserReviews"
+  | "getBookingReviews"
+  // notifications
+  | "getNotifications"
+  | "getUnreadNotificationCount"
+  | "markNotificationRead"
+  | "markAllNotificationsRead"
   /**
    * Not an endpoint. For a failure that never reached the request layer at all
    * — a bug inside a fetcher — so that `error.operation` is honest instead of
@@ -150,6 +167,23 @@ const BUSINESS_FAILURE: Record<ApiOperation, string> = {
   getPendingVerifications: "We couldn't load the review queue.",
   processVerification: "We couldn't record that decision.",
 
+  sendMessage: "That message didn't send. Try again.",
+  getThreads: "We couldn't load your messages.",
+  getBookingMessages: "We couldn't load this conversation.",
+  markThreadRead: "We couldn't mark this conversation as read.",
+  getUnreadMessageCount: "We couldn't check for new messages.",
+
+  createReview: "We couldn't save your review.",
+  deleteReview: "We couldn't remove that review.",
+  getCarReviews: "We couldn't load the reviews for this car.",
+  getUserReviews: "We couldn't load these reviews.",
+  getBookingReviews: "We couldn't load the reviews for this trip.",
+
+  getNotifications: "We couldn't load your notifications.",
+  getUnreadNotificationCount: "We couldn't check for new notifications.",
+  markNotificationRead: "We couldn't mark that as read.",
+  markAllNotificationsRead: "We couldn't mark those as read.",
+
   unknown: "Something went wrong. Try again.",
 };
 
@@ -174,6 +208,13 @@ const NOT_FOUND: Partial<Record<ApiOperation, string>> = {
   deleteInspectionPhoto: "That photo no longer exists.",
   uploadVerificationDocument: "That account no longer exists.",
   processVerification: "That account no longer exists.",
+  sendMessage: "That booking no longer exists.",
+  getBookingMessages: "That booking no longer exists.",
+  markThreadRead: "That booking no longer exists.",
+  createReview: "That booking no longer exists.",
+  getBookingReviews: "That booking no longer exists.",
+  deleteReview: "That review has already been removed.",
+  markNotificationRead: "That notification no longer exists.",
 };
 
 /**
@@ -187,6 +228,11 @@ const CONFLICT: Partial<Record<ApiOperation, string>> = {
     "This car has bookings against it and can't be deleted. Turn off Listed to take it out of search instead.",
   uploadInspectionPhoto:
     "The inspection doesn't exist yet — start or end the trip first.",
+  // `CreateReviewCommandHandler` throws `ConflictException` for both the
+  // already-reviewed and the trip-not-finished cases, and its wording is
+  // better than anything guessable from the status alone. These are only
+  // reached when the body could not be read.
+  createReview: "You can't review this trip right now.",
 };
 
 /** What a 403 means. The server's own text is generic; context is better. */
@@ -206,6 +252,14 @@ const FORBIDDEN: Partial<Record<ApiOperation, string>> = {
   endTrip: "Only the car's owner can end this trip.",
   getPendingVerifications: "You don't have access to the review queue.",
   processVerification: "You don't have permission to review documents.",
+  // Threads have exactly two sides. Admin and Staff can read one but not post
+  // into it, so this is what an admin sees if they try.
+  sendMessage: "You can only message the other person on your own bookings.",
+  getBookingMessages: "You can only read conversations about your own bookings.",
+  markThreadRead: "You can only read conversations about your own bookings.",
+  createReview: "You can only review your own trips.",
+  getBookingReviews: "You can only see reviews for your own trips.",
+  deleteReview: "You don't have permission to remove reviews.",
   deleteUser: "You don't have permission to delete accounts.",
 };
 

@@ -12,9 +12,11 @@
     "verify:client": "tsx scripts/verify-client.mts",
     "verify:contrast": "tsx scripts/verify-contrast.ts",
     "verify": "npm run verify:logic && npm run verify:client && npm run verify:contrast",
-    "verify:live": "tsx scripts/verify-live.mts"
+    "verify:live": "tsx scripts/verify-live.mts",
+    "verify:realtime": "tsx scripts/verify-realtime.mts"
   },
   "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
