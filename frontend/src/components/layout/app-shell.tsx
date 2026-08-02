@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 import { adminRoutes } from "@/lib/admin-routes";
@@ -30,6 +31,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: "/search", label: "Find a car" },
   { href: "/trips", label: "My trips", requiresAuth: true },
+  { href: "/messages", label: "Messages", requiresAuth: true },
   { href: "/owner", label: "Owner", roles: [UserRole.Owner] },
   // The console lives on an unlisted path — see lib/admin-routes.ts. It is
   // linked here only for signed-in Staff and Admin, so the path is not in the
@@ -66,6 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
             <ThemeToggle />
             <UserMenu />
           </div>

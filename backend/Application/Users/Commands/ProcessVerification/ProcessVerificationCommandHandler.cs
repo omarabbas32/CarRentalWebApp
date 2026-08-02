@@ -9,10 +9,14 @@ namespace Application.Users.Commands.ProcessVerification;
 public class ProcessVerificationCommandHandler : IRequestHandler<ProcessVerificationCommand, Unit>
 {
     private readonly IAppDbContext _context;
+    private readonly INotificationService _notifications;
 
-    public ProcessVerificationCommandHandler(IAppDbContext context)
+    public ProcessVerificationCommandHandler(
+        IAppDbContext context,
+        INotificationService notifications)
     {
         _context = context;
+        _notifications = notifications;
     }
 
     public async Task<Unit> Handle(ProcessVerificationCommand request, CancellationToken cancellationToken)
@@ -57,6 +61,28 @@ public class ProcessVerificationCommandHandler : IRequestHandler<ProcessVerifica
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Only the two decided outcomes are worth telling someone about. Moving a document
+        // back to Pending or Unverified is bookkeeping, not news.
+        if (request.Status is VerificationStatus.Verified or VerificationStatus.Rejected)
+        {
+            var approved = request.Status == VerificationStatus.Verified;
+            var document = request.DocumentType == VerificationDocumentType.GovernmentId
+                ? "government ID"
+                : "driving licence";
+
+            await _notifications.NotifyAsync(
+                user.Id,
+                approved
+                    ? NotificationType.VerificationApproved
+                    : NotificationType.VerificationRejected,
+                approved ? "Document approved" : "Document needs another look",
+                approved
+                    ? $"Your {document} has been verified."
+                    : $"Your {document} wasn't accepted. You can upload a new photo.",
+                null,
+                cancellationToken);
+        }
 
         return Unit.Value;
     }

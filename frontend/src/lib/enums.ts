@@ -153,6 +153,51 @@ export enum InspectionType {
   Return = 1,
 }
 
+/**
+ * Which way round a review points. `Domain.Booking.ReviewType`.
+ *
+ * Only `RenterToOwner` feeds a car's rating — an owner's opinion of a renter
+ * says nothing about the car.
+ */
+export enum ReviewType {
+  RenterToOwner = 0,
+  OwnerToRenter = 1,
+}
+
+export const reviewTypeLabel: Record<ReviewType, string> = {
+  [ReviewType.RenterToOwner]: "Renter's review",
+  [ReviewType.OwnerToRenter]: "Owner's review",
+};
+
+/**
+ * What a notification is about. `Domain.User.NotificationType`.
+ *
+ * Adding a member here without giving it a route fails
+ * `npm run verify:logic` — `notificationHref` is checked exhaustively, because
+ * a notification you cannot click is worse than one that was never sent.
+ */
+export enum NotificationType {
+  BookingRequested = 0,
+  BookingCancelled = 1,
+  TripStarted = 2,
+  TripEnded = 3,
+  MessageReceived = 4,
+  ReviewReceived = 5,
+  VerificationApproved = 6,
+  VerificationRejected = 7,
+}
+
+export const notificationTypeLabel: Record<NotificationType, string> = {
+  [NotificationType.BookingRequested]: "Booking request",
+  [NotificationType.BookingCancelled]: "Booking cancelled",
+  [NotificationType.TripStarted]: "Trip started",
+  [NotificationType.TripEnded]: "Trip completed",
+  [NotificationType.MessageReceived]: "New message",
+  [NotificationType.ReviewReceived]: "New review",
+  [NotificationType.VerificationApproved]: "Document approved",
+  [NotificationType.VerificationRejected]: "Document rejected",
+};
+
 export enum TransmissionType {
   Manual = 0,
   Automatic = 1,

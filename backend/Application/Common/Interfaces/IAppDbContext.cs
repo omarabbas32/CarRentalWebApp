@@ -13,9 +13,12 @@ public interface IAppDbContext
     DbSet<Booking> Bookings { get; }
     DbSet<TripInspection> TripInspections { get; }
     DbSet<InspectionPhoto> InspectionPhotos { get; }
+    DbSet<Message> Messages { get; }
+    DbSet<Review> Reviews { get; }
     DbSet<User> Users { get; }
     DbSet<UserVerification> UserVerifications { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
+    DbSet<Notification> Notifications { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

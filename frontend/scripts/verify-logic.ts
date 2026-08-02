@@ -23,7 +23,11 @@ import { buildAttentionList, carIdsWithBookings, inboxAction, INBOX_TABS, ownerS
 import { EMPTY_DRAFT, errorsForStep, normaliseVin, toCarInput, validateCarDraft, WIZARD_STEPS, type CarDraft } from "@/lib/car-form";
 import { clampCleanliness, clampFuel, inspectionModeFor, validateInspection } from "@/lib/inspection";
 import { safeNext } from "@/components/auth/redirect-if-authenticated";
-import { parseRoleName, parseCategoryName, carCategoryName, CarCategory, UserRole, BookingStatus, bookingStatusLabel, enumValues, VerificationStatus, VerificationDocumentType, GovernmentIdType, governmentIdTypeLabel, TransmissionType, FuelType } from "@/lib/enums";
+import { canReviewBooking, formatRating, ownReview, reviewDirectionFor, starDistribution } from "@/lib/reviews";
+import { canMessageOnBooking, counterpartyOf, groupMessagesByDay } from "@/lib/messages";
+import { isUnread, notificationHref, notificationIcon } from "@/lib/notifications";
+import type { MessageDto, ReviewDto } from "@/types/api";
+import { parseRoleName, parseCategoryName, carCategoryName, CarCategory, UserRole, BookingStatus, bookingStatusLabel, enumValues, VerificationStatus, VerificationDocumentType, GovernmentIdType, governmentIdTypeLabel, TransmissionType, FuelType, NotificationType, ReviewType } from "@/lib/enums";
 import type { BookingDto } from "@/types/api";
 
 let passed = 0;
@@ -695,6 +699,260 @@ check("refuses off-site destinations", () => {
   assert.equal(safeNext("javascript:alert(1)"), "/");
   assert.equal(safeNext(null), "/");
   assert.equal(safeNext(""), "/");
+});
+
+console.log("\nreviews");
+
+/** A booking, as far as the review rules are concerned. */
+const trip = (status: BookingStatus) => ({
+  renterId: "renter-1",
+  ownerId: "owner-1",
+  status,
+});
+const renterSide = { userId: "renter-1", role: UserRole.Renter };
+const ownerSide = { userId: "owner-1", role: UserRole.Owner };
+const adminSide = { userId: "admin-1", role: UserRole.Admin };
+const outsider = { userId: "nobody", role: UserRole.Renter };
+
+check("direction follows which side of the booking you are on", () => {
+  assert.equal(reviewDirectionFor(trip(BookingStatus.Completed), renterSide), ReviewType.RenterToOwner);
+  assert.equal(reviewDirectionFor(trip(BookingStatus.Completed), ownerSide), ReviewType.OwnerToRenter);
+  assert.equal(reviewDirectionFor(trip(BookingStatus.Completed), outsider), null);
+  assert.equal(reviewDirectionFor(trip(BookingStatus.Completed), null), null);
+});
+
+check("Admin has no side, so cannot review", () => {
+  // Mirrors BookingAccess.EnsureThreadParticipant, which — unlike
+  // EnsureParticipant — does not exempt Admin or Staff. A review needs a
+  // reviewer and a reviewee; a third party is neither.
+  assert.equal(reviewDirectionFor(trip(BookingStatus.Completed), adminSide), null);
+  assert.equal(canReviewBooking(trip(BookingStatus.Completed), adminSide, []), false);
+});
+
+check("only a Completed trip can be reviewed", () => {
+  // Completed is the only status meaning a trip actually happened, and
+  // CreateReviewCommandHandler throws ConflictException for every other one.
+  // `enumValues` returns plain numbers, so narrow before indexing the label map.
+  for (const value of enumValues(BookingStatus)) {
+    const status = value as BookingStatus;
+    assert.equal(
+      canReviewBooking(trip(status), renterSide, []),
+      status === BookingStatus.Completed,
+      `status ${bookingStatusLabel[status]}`,
+    );
+  }
+});
+
+check("one review per direction, and the two are independent", () => {
+  const done = trip(BookingStatus.Completed);
+  const renterReview = { type: ReviewType.RenterToOwner };
+
+  // The renter has used their turn...
+  assert.equal(canReviewBooking(done, renterSide, [renterReview]), false);
+  // ...and the owner's is untouched by that.
+  assert.equal(canReviewBooking(done, ownerSide, [renterReview]), true);
+});
+
+check("ownReview returns your side's review, never the other's", () => {
+  const done = trip(BookingStatus.Completed);
+  const reviews = [
+    { id: "a", type: ReviewType.RenterToOwner },
+    { id: "b", type: ReviewType.OwnerToRenter },
+  ] as ReviewDto[];
+
+  assert.equal(ownReview(done, renterSide, reviews)?.id, "a");
+  assert.equal(ownReview(done, ownerSide, reviews)?.id, "b");
+  assert.equal(ownReview(done, adminSide, reviews), null);
+});
+
+check("star distribution buckets, totals and averages agree", () => {
+  const d = starDistribution([{ rating: 5 }, { rating: 5 }, { rating: 3 }, { rating: 1 }]);
+  assert.deepEqual(d.counts, [1, 0, 1, 0, 2]);
+  assert.equal(d.total, 4);
+  assert.equal(d.average, 3.5);
+  // The counts must account for every review, or the bar chart quietly lies.
+  assert.equal(d.counts.reduce((a, b) => a + b, 0), d.total);
+});
+
+check("out-of-range ratings are discarded, not mis-bucketed", () => {
+  // Cannot come from the validator, but a hand-edited row should not corrupt
+  // the chart or write outside the array.
+  const d = starDistribution([{ rating: 0 }, { rating: 6 }, { rating: 4 }]);
+  assert.deepEqual(d.counts, [0, 0, 0, 1, 0]);
+  assert.equal(d.total, 1);
+});
+
+check("an empty distribution does not divide by zero", () => {
+  const d = starDistribution([]);
+  assert.equal(d.total, 0);
+  assert.equal(d.average, 0);
+  assert.equal(formatRating(0), "—");
+});
+
+check("ratings render without a pointless decimal", () => {
+  assert.equal(formatRating(4), "4");
+  assert.equal(formatRating(4.25), "4.3");
+  assert.equal(formatRating(3.5), "3.5");
+});
+
+console.log("\nmessages");
+
+const thread = { renterId: "renter-1", ownerId: "owner-1" };
+
+check("the counterparty is the other participant", () => {
+  assert.equal(counterpartyOf(thread, renterSide), "owner-1");
+  assert.equal(counterpartyOf(thread, ownerSide), "renter-1");
+  assert.equal(counterpartyOf(thread, outsider), null);
+  assert.equal(counterpartyOf(thread, null), null);
+});
+
+check("Admin can read a thread but has nobody to send to", () => {
+  // The read/write asymmetry on the server: EnsureParticipant exempts Admin,
+  // EnsureThreadParticipant does not. Rendering a composer for them would
+  // produce a 403 on the first send.
+  assert.equal(counterpartyOf(thread, adminSide), null);
+  assert.equal(canMessageOnBooking(thread, adminSide), false);
+});
+
+check("a cancelled or completed trip keeps its thread open", () => {
+  // SendMessageCommandHandler has no status guard, deliberately: damage
+  // disputes and deposit queries happen after the trip, not during it.
+  assert.equal(canMessageOnBooking(thread, renterSide), true);
+  assert.equal(canMessageOnBooking(thread, ownerSide), true);
+});
+
+check("messages group into local days, in order", () => {
+  const msg = (id: string, sentAt: string) =>
+    ({
+      id,
+      sentAt,
+      bookingId: "b",
+      senderId: "s",
+      senderFirstName: "S",
+      receiverId: "r",
+      content: "x",
+      readAt: null,
+    }) as MessageDto;
+
+  // Built from local parts so this holds in whatever timezone the suite runs
+  // in — the same reason groupMessagesByDay does not use toISOString().
+  const morning = new Date(2026, 4, 10, 9, 0, 0).toISOString();
+  const lateSameDay = new Date(2026, 4, 10, 23, 30, 0).toISOString();
+  const justAfterMidnight = new Date(2026, 4, 11, 0, 30, 0).toISOString();
+
+  const groups = groupMessagesByDay([
+    msg("a", morning),
+    msg("b", lateSameDay),
+    msg("c", justAfterMidnight),
+  ]);
+
+  assert.equal(groups.length, 2);
+  assert.deepEqual(groups[0].messages.map((m) => m.id), ["a", "b"]);
+  assert.deepEqual(groups[1].messages.map((m) => m.id), ["c"]);
+  assert.equal(groups[0].day, "2026-05-10");
+  assert.equal(groups[1].day, "2026-05-11");
+});
+
+check("an empty thread groups to nothing", () => {
+  assert.deepEqual(groupMessagesByDay([]), []);
+});
+
+console.log("\nnotifications");
+
+check("every notification type has somewhere to go", () => {
+  // The check that matters: adding a NotificationType without giving it a
+  // route fails here rather than shipping a notification nobody can click.
+  for (const type of enumValues(NotificationType)) {
+    const href = notificationHref({ type, relatedEntityId: "booking-1" });
+    assert.ok(href.startsWith("/"), `type ${type} produced ${href}`);
+  }
+});
+
+check("every notification type has an icon", () => {
+  for (const type of enumValues(NotificationType)) {
+    assert.ok(notificationIcon(type).length > 0, `type ${type}`);
+  }
+});
+
+check("booking notifications link to the booking, not the list", () => {
+  assert.equal(
+    notificationHref({ type: NotificationType.BookingRequested, relatedEntityId: "b1" }),
+    "/bookings/b1",
+  );
+  assert.equal(
+    notificationHref({ type: NotificationType.MessageReceived, relatedEntityId: "b1" }),
+    "/bookings/b1",
+  );
+});
+
+check("a booking notification with no id falls back rather than linking to /bookings/null", () => {
+  assert.equal(
+    notificationHref({ type: NotificationType.TripEnded, relatedEntityId: null }),
+    "/trips",
+  );
+});
+
+check("verification notifications ignore the id entirely", () => {
+  // They carry none — there is one verification per person, on their own page.
+  assert.equal(
+    notificationHref({ type: NotificationType.VerificationApproved, relatedEntityId: null }),
+    "/account/verification",
+  );
+  assert.equal(
+    notificationHref({ type: NotificationType.VerificationRejected, relatedEntityId: "ignored" }),
+    "/account/verification",
+  );
+});
+
+check("unread is the absence of a timestamp", () => {
+  assert.equal(isUnread({ readAt: null }), true);
+  assert.equal(isUnread({ readAt: "2026-05-10T09:00:00Z" }), false);
+});
+
+console.log("\nerror mapping for the new endpoints");
+
+check("every new operation has a human sentence for a 500", () => {
+  const operations = [
+    "sendMessage",
+    "getThreads",
+    "getBookingMessages",
+    "markThreadRead",
+    "getUnreadMessageCount",
+    "createReview",
+    "deleteReview",
+    "getCarReviews",
+    "getUserReviews",
+    "getBookingReviews",
+    "getNotifications",
+    "getUnreadNotificationCount",
+    "markNotificationRead",
+    "markAllNotificationsRead",
+  ] as const;
+
+  for (const operation of operations) {
+    const message = mapApiError(operation, 500);
+    assert.ok(message.length > 0, operation);
+    assert.ok(
+      !message.toLowerCase().includes("internal server error"),
+      `${operation} leaked the server's wording`,
+    );
+  }
+});
+
+check("a 409 on createReview carries the server's own sentence", () => {
+  // ConflictException messages are written for the user and client.ts passes
+  // them through verbatim. The CONFLICT map is only the unreadable-body case.
+  const conflict = new ApiError({
+    status: 409,
+    operation: "createReview",
+    message: "You have already reviewed this trip.",
+  });
+  assert.equal(conflict.isConflict, true);
+  assert.equal(conflict.message, "You have already reviewed this trip.");
+});
+
+check("sendMessage explains a 403 in terms of bookings", () => {
+  assert.match(mapApiError("sendMessage", 403), /booking/i);
 });
 
 console.log(`\n${passed} checks passed\n`);

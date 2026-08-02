@@ -223,7 +223,9 @@ These are non-negotiable consequences of the backend as it stands.
 | Amounts are computed and snapshotted server-side | The client never sends money. `PriceBreakdown` mirrors the formula (`subtotal + 10% + 5% + deposit`) from **one** module so display and server can't drift, and the UI re-renders from the returned booking. |
 | Images are absolute Cloudinary URLs | `next.config.ts` → `images.remotePatterns` for `res.cloudinary.com`; a `cloudinaryThumb(url, w)` helper injects transformation segments for grid thumbnails. |
 | `/api/auth/*` = 5 req/min, shared | No auto-retry, no aggressive refresh, disabled buttons in flight, explicit 429 state. |
-| No reviews / payments / messages / availability endpoints | Ratings are read-only. Message and payment affordances appear in the design and ship disabled rather than being silently dropped. |
+| ~~No reviews or messages endpoints~~ — **both exist now.** Messaging is **booking-scoped**: a thread belongs to a booking and has exactly two sides | A renter therefore **cannot contact an owner before requesting the car**. The car page gets no "Message the owner" button — there is no endpoint behind one, and requesting the car is what opens the thread. Threads stay open on cancelled and completed trips, which is when disputes happen. |
+| Reviews require `BookingStatus.Completed`, and **only the owner can complete a trip** (`/end` is owner-only) | If an owner never ends a trip, the renter can never review it. Copy must not promise "review after your trip" unconditionally — `booking-reviews.tsx` says *"once the owner records the return"* instead. |
+| No payments / availability endpoints | Payment affordances appear in the design and ship disabled rather than being silently dropped. |
 | No file-size or MIME validation server-side | Enforced client-side before upload, or a large file becomes a 500. |
 
 ---

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { CalendarCheck, Car, LayoutDashboard, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ export function OwnerShell({ children }: { children: ReactNode }) {
             <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
               <Link href="/search">Back to the site</Link>
             </Button>
+            <NotificationBell />
             <ThemeToggle />
             <UserMenu />
           </div>

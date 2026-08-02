@@ -3,6 +3,7 @@ using Application.Common.Interfaces;
 using Application.Common.Exceptions;
 using Domain.Booking;
 using Domain.Car;
+using Domain.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Bookings.Commands.CreateBooking;
@@ -11,11 +12,16 @@ public class CreateBookingCommandHandler : IRequestHandler<CreateBookingCommand,
 {
     private readonly IAppDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notifications;
 
-    public CreateBookingCommandHandler(IAppDbContext context, ICurrentUserService currentUserService)
+    public CreateBookingCommandHandler(
+        IAppDbContext context,
+        ICurrentUserService currentUserService,
+        INotificationService notifications)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _notifications = notifications;
     }
 
     public async Task<Guid> Handle(CreateBookingCommand request, CancellationToken cancellationToken)
@@ -69,6 +75,16 @@ public class CreateBookingCommandHandler : IRequestHandler<CreateBookingCommand,
 
         _context.Bookings.Add(booking);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Saved first, notified after. If this throws the booking still exists — which is
+        // the right way round for the two to fail.
+        await _notifications.NotifyAsync(
+            car.OwnerId,
+            NotificationType.BookingRequested,
+            "New booking request",
+            $"Someone wants your {car.Make} {car.Model} from {booking.StartDate:d MMM} to {booking.EndDate:d MMM}.",
+            booking.Id,
+            cancellationToken);
 
         return booking.Id;
     }

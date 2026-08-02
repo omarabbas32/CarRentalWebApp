@@ -90,6 +90,36 @@ the http profile.
 | `POST` | `/api/users/{id}/verification` | **public** | `{ url }` |
 | `GET` | `/api/users/pending-verifications` | Staff, Admin | `PendingVerificationDto[]` |
 | `POST` | `/api/users/{id}/process-verification` | Staff, Admin | `204` |
+| `POST` | `/api/messages` | thread participant | `MessageDto` |
+| `GET` | `/api/messages/threads` | signed in | `GetThreadsResult` |
+| `GET` | `/api/messages/booking/{id}` | participant (Staff/Admin read) | `GetBookingMessagesResult` |
+| `POST` | `/api/messages/booking/{id}/read` | participant | `204` |
+| `GET` | `/api/messages/unread-count` | signed in | `{ count }` |
+| `POST` | `/api/reviews` | thread participant | review `Guid` |
+| `GET` | `/api/reviews/car/{carId}` | **public** | `GetCarReviewsResult` |
+| `GET` | `/api/reviews/user/{userId}` | **public** | `GetUserReviewsResult` |
+| `GET` | `/api/reviews/booking/{id}` | participant | `ReviewDto[]` |
+| `DELETE` | `/api/reviews/{id}` | Admin, Staff | `204` |
+| `GET` | `/api/notifications` | signed in | `GetNotificationsResult` |
+| `GET` | `/api/notifications/unread-count` | signed in | `{ count }` |
+| `POST` | `/api/notifications/{id}/read` | owner of the row | `204` |
+| `POST` | `/api/notifications/read-all` | signed in | `204` |
+
+There is also a SignalR hub at **`/hubs/notifications`**, which pushes two events —
+`notification` and `message`. It has no client-callable methods on purpose: every write
+still goes through the REST controllers, so there is one authorization model rather than
+two. Because a browser cannot set an `Authorization` header on a WebSocket upgrade, the hub
+reads `?access_token=`; `Program.cs` scopes that to paths under `/hubs` so bearer tokens
+never land in access logs for ordinary REST calls.
+
+The two public review routes are a deliberate choice rather than a missing attribute:
+reputation is what someone consults *before* signing up, and the car page renders reviews
+server-side so they are in the initial HTML.
+
+Note the split on messaging: reading a thread uses `BookingAccess.EnsureParticipant`, which
+exempts Admin and Staff so support can see a conversation. Writing uses
+`EnsureThreadParticipant`, which does **not** — a thread has exactly two sides and an admin
+has no counterparty to address a message to.
 
 Routes marked **public** are not a design choice — no controller carries `[Authorize]`, and
 authorization is applied only by `AuthorizationBehavior` reading the attribute off the

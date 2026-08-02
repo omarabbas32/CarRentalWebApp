@@ -88,9 +88,6 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("ReturnTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("ReviewId")
-                        .HasColumnType("uuid");
-
                     b.Property<decimal>("SecurityDeposit")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -140,8 +137,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("ReturnInspectionId")
                         .IsUnique();
 
-                    b.HasIndex("ReviewId");
-
                     b.ToTable("Bookings");
                 });
 
@@ -174,12 +169,16 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("BookingId")
+                    b.Property<Guid>("BookingId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ReceiverId")
                         .HasColumnType("uuid");
@@ -192,13 +191,13 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookingId");
-
-                    b.HasIndex("ReceiverId");
-
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Message");
+                    b.HasIndex("BookingId", "SentAt");
+
+                    b.HasIndex("ReceiverId", "ReadAt");
+
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("Domain.Booking.Payment", b =>
@@ -234,8 +233,15 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Comment")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
@@ -246,13 +252,19 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("ReviewerId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RevieweeId");
 
                     b.HasIndex("ReviewerId");
 
-                    b.ToTable("Review");
+                    b.HasIndex("BookingId", "Type")
+                        .IsUnique();
+
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("Domain.Booking.TripInspection", b =>
@@ -492,25 +504,38 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RelatedEntityId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "CreatedAt");
 
-                    b.ToTable("Notification");
+                    b.HasIndex("UserId", "ReadAt");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Domain.User.RefreshToken", b =>
@@ -684,10 +709,6 @@ namespace Infrastructure.Migrations
                         .HasForeignKey("Domain.Booking.Booking", "ReturnInspectionId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Domain.Booking.Review", "Review")
-                        .WithMany()
-                        .HasForeignKey("ReviewId");
-
                     b.Navigation("Car");
 
                     b.Navigation("Owner");
@@ -697,8 +718,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Renter");
 
                     b.Navigation("ReturnInspection");
-
-                    b.Navigation("Review");
                 });
 
             modelBuilder.Entity("Domain.Booking.InspectionPhoto", b =>
@@ -714,21 +733,29 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Booking.Message", b =>
                 {
-                    b.HasOne("Domain.Booking.Booking", null)
+                    b.HasOne("Domain.Booking.Booking", "Booking")
                         .WithMany("Messages")
-                        .HasForeignKey("BookingId");
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasOne("Domain.User.User", null)
+                    b.HasOne("Domain.User.User", "Receiver")
                         .WithMany("ReceivedMessages")
                         .HasForeignKey("ReceiverId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.User.User", null)
+                    b.HasOne("Domain.User.User", "Sender")
                         .WithMany("SentMessages")
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("Domain.Booking.Payment", b =>
@@ -744,17 +771,29 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Booking.Review", b =>
                 {
-                    b.HasOne("Domain.User.User", null)
+                    b.HasOne("Domain.Booking.Booking", "Booking")
+                        .WithMany("Reviews")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.User.User", "Reviewee")
                         .WithMany("ReceivedReviews")
                         .HasForeignKey("RevieweeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.User.User", null)
+                    b.HasOne("Domain.User.User", "Reviewer")
                         .WithMany("GivenReviews")
                         .HasForeignKey("ReviewerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Reviewee");
+
+                    b.Navigation("Reviewer");
                 });
 
             modelBuilder.Entity("Domain.Booking.TripInspection", b =>
@@ -846,9 +885,13 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.User.Notification", b =>
                 {
-                    b.HasOne("Domain.User.User", null)
+                    b.HasOne("Domain.User.User", "User")
                         .WithMany("Notifications")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.User.RefreshToken", b =>
@@ -878,6 +921,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Messages");
 
                     b.Navigation("Payments");
+
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("Domain.Booking.TripInspection", b =>

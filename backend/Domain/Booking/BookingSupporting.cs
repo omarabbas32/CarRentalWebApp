@@ -1,7 +1,9 @@
 namespace Domain.Booking
 {
-    // Placeholder types for models not yet fully implemented
-    
+    // `Payment` is still a placeholder — nothing writes to it and there are no payment
+    // endpoints. `Review` and `Message` used to live here too; they are real entities now
+    // and have their own files.
+
     public class Payment
     {
         public Guid Id { get; set; }
@@ -9,24 +11,10 @@ namespace Domain.Booking
         public DateTime PaymentDate { get; set; }
     }
 
-    public class Message
-    {
-        public Guid Id { get; set; }
-        public string Content { get; set; } = string.Empty;
-        public DateTime SentAt { get; set; }
-        public Guid SenderId { get; set; }
-        public Guid ReceiverId { get; set; }
-    }
-
-    public class Review
-    {
-        public Guid Id { get; set; }
-        public int Rating { get; set; }
-        public string? Comment { get; set; }
-        public Guid ReviewerId { get; set; }
-        public Guid RevieweeId { get; set; }
-    }
-
+    /// <summary>
+    /// A car's coordinates. Not a placeholder — mapped as an owned type by
+    /// <c>CarConfiguration.OwnsOne(c => c.Location)</c>.
+    /// </summary>
     public class Point
     {
         public double Lat { get; set; }

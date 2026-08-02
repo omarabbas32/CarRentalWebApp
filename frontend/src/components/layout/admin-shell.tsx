@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { ShieldCheck, Users } from "lucide-react";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
 import { adminRoutes } from "@/lib/admin-routes";
@@ -35,6 +36,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             Staff console
           </span>
           <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
             <ThemeToggle />
             <UserMenu />
           </div>

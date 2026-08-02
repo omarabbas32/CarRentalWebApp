@@ -107,6 +107,79 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
       case url.pathname === "/api/users/u1":
         return json(200, { id: "u1", email: "nour@example.com", role: 1 });
 
+      // --- messages -------------------------------------------------------
+
+      // SendMessage returns the whole DTO, not a bare id: the sender needs the
+      // server's SentAt to order its optimistic append.
+      case url.pathname === "/api/messages" && req.method === "POST":
+        return json(200, {
+          id: "m1", bookingId: "b1", senderId: "u1", senderFirstName: "Nour",
+          receiverId: "u2", content: "On my way", sentAt: "2026-05-10T09:00:00Z",
+          readAt: null,
+        });
+
+      // EnsureThreadParticipant refuses Admin and Staff on send, unlike the
+      // read path.
+      case url.pathname === "/api/messages/forbidden" && req.method === "POST":
+        return json(403, { error: "You do not have permission to perform this action." });
+
+      case url.pathname === "/api/messages/booking/b1":
+        return json(200, {
+          messages: [{
+            id: "m1", bookingId: "b1", senderId: "u1", senderFirstName: "Nour",
+            receiverId: "u2", content: "Newest first on the wire",
+            sentAt: "2026-05-10T09:00:00Z", readAt: null,
+          }],
+          totalCount: 1, pageNumber: 2, pageSize: 25, totalPages: 1,
+        });
+
+      case url.pathname === "/api/messages/booking/b1/read" && req.method === "POST":
+        res.writeHead(204); return res.end();
+
+      case url.pathname === "/api/messages/unread-count":
+        return json(200, { count: 3 });
+
+      // --- reviews --------------------------------------------------------
+
+      case url.pathname === "/api/reviews" && req.method === "POST":
+        return json(200, "r7f1c0de-0000-4000-8000-000000000001");
+
+      // Both review refusals are ConflictExceptions whose text is written for
+      // the user and must reach them unaltered.
+      case url.pathname === "/api/reviews/duplicate" && req.method === "POST":
+        return json(409, { error: "You've already reviewed this trip." });
+
+      case url.pathname === "/api/reviews/car/c1":
+        return json(200, {
+          reviews: [{
+            id: "r1", bookingId: "b1", carId: "c1", reviewerId: "u1",
+            reviewerFirstName: "Nour", reviewerLastName: "Haddad",
+            revieweeId: "u2", type: 0, rating: 5, comment: "Spotless",
+            createdAt: "2026-05-10T09:00:00Z",
+          }],
+          totalCount: 1, pageNumber: 1, pageSize: 20, totalPages: 1,
+        });
+
+      // --- notifications --------------------------------------------------
+
+      case url.pathname === "/api/notifications":
+        return json(200, {
+          notifications: [{
+            id: "n1", type: 4, title: "Message from Nour", body: "On my way",
+            relatedEntityId: "b1", readAt: null, createdAt: "2026-05-10T09:00:00Z",
+          }],
+          totalCount: 1, pageNumber: 1, pageSize: 10, totalPages: 1,
+        });
+
+      case url.pathname === "/api/notifications/unread-count":
+        return json(200, { count: 7 });
+
+      case url.pathname === "/api/notifications/n1/read" && req.method === "POST":
+        res.writeHead(204); return res.end();
+
+      case url.pathname === "/api/notifications/read-all" && req.method === "POST":
+        res.writeHead(204); return res.end();
+
       default:
         return json(404, { error: "not found" });
     }
@@ -126,6 +199,9 @@ const carsApi = await import("@/lib/api/cars");
 const bookingsApi = await import("@/lib/api/bookings");
 const authApi = await import("@/lib/api/auth");
 const { CarCategory } = await import("@/lib/enums");
+const messagesApi = await import("@/lib/api/messages");
+const reviewsApi = await import("@/lib/api/reviews");
+const notificationsApi = await import("@/lib/api/notifications");
 
 try {
   console.log("\nrequests");
@@ -290,6 +366,90 @@ try {
 
     await capture(() => apiRequest("refresh", "/api/needs-auth", { auth: false }));
     assert.equal(fired, 1, "auth routes must not trigger it — that would loop");
+  });
+
+  await check("sendMessage returns the whole message, not just an id", async () => {
+    // The sender needs SentAt to order its optimistic append, and the id to
+    // recognise its own message when the hub echoes it back.
+    const message = await messagesApi.sendMessage("b1", "On my way");
+    assert.equal(message.id, "m1");
+    assert.equal(message.sentAt, "2026-05-10T09:00:00Z");
+    assert.equal(message.senderFirstName, "Nour");
+  });
+
+  await check("a 403 on send is explained in terms of bookings", async () => {
+    const error = await capture(() =>
+      apiRequest("sendMessage", "/api/messages/forbidden", { method: "POST" }),
+    );
+    assert.equal(error.status, 403);
+    assert.match(error.message, /booking/i);
+  });
+
+  await check("thread paging serialises into the query string", async () => {
+    const page = await messagesApi.getBookingMessages("b1", {
+      pageNumber: 2,
+      pageSize: 25,
+    });
+    assert.equal(page.pageNumber, 2);
+    assert.equal(page.pageSize, 25);
+    // Named after the resource, like every other paged wrapper.
+    assert.ok(Array.isArray(page.messages));
+  });
+
+  await check("marking a thread read is a 204 with no body", async () => {
+    const result = await messagesApi.markThreadRead("b1");
+    assert.equal(result, undefined);
+  });
+
+  await check("unread counts come back as a number", async () => {
+    assert.equal((await messagesApi.getUnreadMessageCount()).count, 3);
+    assert.equal((await notificationsApi.getUnreadNotificationCount()).count, 7);
+  });
+
+  await check("createReview returns a bare id string", async () => {
+    const id = await reviewsApi.createReview("b1", 5, "Spotless");
+    assert.equal(typeof id, "string");
+  });
+
+  await check("a duplicate review keeps the server's own sentence", async () => {
+    // ConflictException text is written for the user. Replacing it with our
+    // own wording would lose the only thing that explains the refusal.
+    const error = await capture(() =>
+      apiRequest("createReview", "/api/reviews/duplicate", { method: "POST" }),
+    );
+    assert.equal(error.status, 409);
+    assert.equal(error.isConflict, true);
+    assert.equal(error.message, "You've already reviewed this trip.");
+  });
+
+  await check("car reviews are public and sent without a bearer token", async () => {
+    // The car page renders these server-side, where there is no session at
+    // all. Sending a token would work, but requiring one would break the page.
+    registerTokenProvider(() => "should-not-be-sent");
+    const page = await reviewsApi.getCarReviews("c1");
+    registerTokenProvider(() => null);
+
+    assert.equal(page.reviews.length, 1);
+    assert.equal(page.reviews[0].rating, 5);
+
+    const request = seen.findLast((r) => r.url.startsWith("/api/reviews/car/c1"));
+    assert.ok(request, "the request should have reached the stub");
+    assert.equal(
+      request.auth,
+      undefined,
+      "a public endpoint must not send Authorization",
+    );
+  });
+
+  await check("notifications page comes back resource-named", async () => {
+    const page = await notificationsApi.getNotifications({ pageSize: 10 });
+    assert.ok(Array.isArray(page.notifications));
+    assert.equal(page.notifications[0].relatedEntityId, "b1");
+  });
+
+  await check("marking notifications read returns nothing", async () => {
+    assert.equal(await notificationsApi.markNotificationRead("n1"), undefined);
+    assert.equal(await notificationsApi.markAllNotificationsRead(), undefined);
   });
 
   console.log(`\n${passed} checks passed\n`);

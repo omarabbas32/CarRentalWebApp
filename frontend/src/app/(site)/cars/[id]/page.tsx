@@ -4,8 +4,11 @@ import { Check, Gauge, Star, X } from "lucide-react";
 import { BookingPanel } from "@/components/cars/booking-panel";
 import { CarGallery } from "@/components/cars/car-gallery";
 import { ErrorState } from "@/components/error-state";
+import { ReviewList } from "@/components/reviews/review-list";
+import { ReviewSummary } from "@/components/reviews/review-summary";
 import { Separator } from "@/components/ui/separator";
 import { getCar } from "@/lib/api/cars";
+import { getCarReviews } from "@/lib/api/reviews";
 import { ApiError } from "@/lib/api/errors";
 import {
   CAR_FEATURES,
@@ -66,6 +69,16 @@ export default async function CarDetailPage({
   // fetch above with a search call and match on id, which failed for exactly
   // the cars search excludes — inactive, unavailable, or booked for the range.
   const images = car.images.map((image) => image.url);
+
+  // Fetched server-side because `GET /api/reviews/car/{id}` is public: the
+  // reviews are in the initial HTML, need no loading state, and are indexable.
+  //
+  // Swallowed on failure rather than propagated. Reviews are supporting
+  // content, and a car page that renders without them is far better than one
+  // that refuses to render at all because a secondary call fell over.
+  const reviews = await getCarReviews(id, { pageSize: 20 })
+    .then((page) => page.reviews)
+    .catch(() => []);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 pb-28 md:pb-8 lg:px-12">
@@ -167,6 +180,14 @@ export default async function CarDetailPage({
               The deposit is held with the booking total and returned when the trip
               ends.
             </p>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-6">
+            <h2 className="text-h2">Reviews</h2>
+            <ReviewSummary reviews={reviews} />
+            <ReviewList reviews={reviews} />
           </section>
         </div>
 

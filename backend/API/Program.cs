@@ -23,6 +23,9 @@ builder.Services.AddScoped<Application.Common.Interfaces.ICloudinaryService, Inf
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
 builder.Services.AddScoped<Application.Common.Interfaces.ICurrentUserService, API.Services.CurrentUserService>();
+// Not covered by the MediatR assembly scan below — that finds handlers and validators,
+// not service interfaces.
+builder.Services.AddScoped<INotificationService, API.Notifications.SignalRNotificationService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
@@ -97,7 +100,32 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+
+    // A browser cannot set an Authorization header on a WebSocket upgrade, so the SignalR
+    // client appends the token as ?access_token=. That is the standard workaround and the
+    // only way the hub can authenticate.
+    //
+    // It is scoped to /hubs on purpose. Accepting a query-string token on the REST routes
+    // as well would put JWTs into server access logs, browser history and Referer headers
+    // — the exact places a bearer token should never appear.
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
 });
+
+builder.Services.AddSignalR();
 
 // Rate Limiting
 builder.Services.AddRateLimiter(options =>
@@ -178,5 +206,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// After UseAuthentication/UseAuthorization, so the hub's [Authorize] has an identity to
+// check. The path is matched by the OnMessageReceived handler above, which is what lets
+// the WebSocket handshake carry a token at all.
+app.MapHub<API.Hubs.NotificationHub>("/hubs/notifications");
 
 app.Run();

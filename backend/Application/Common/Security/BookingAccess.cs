@@ -53,4 +53,26 @@ public static class BookingAccess
             throw new ForbiddenAccessException();
         }
     }
+
+    /// <summary>
+    /// The two people in a booking's thread, and only them. Returns the id of whichever
+    /// one the caller is not.
+    /// </summary>
+    /// <remarks>
+    /// Unlike <see cref="EnsureParticipant"/>, Admin and Staff do <b>not</b> pass. A
+    /// booking-scoped thread has exactly two sides, and a third party has no seat at it —
+    /// there would be no counterparty to address a message to. Support can read a thread;
+    /// it cannot post into one.
+    /// </remarks>
+    public static Guid EnsureThreadParticipant(
+        Domain.Booking.Booking booking,
+        ICurrentUserService currentUser)
+    {
+        var userId = currentUser.UserId;
+
+        if (userId == booking.RenterId) return booking.OwnerId;
+        if (userId == booking.OwnerId) return booking.RenterId;
+
+        throw new ForbiddenAccessException();
+    }
 }

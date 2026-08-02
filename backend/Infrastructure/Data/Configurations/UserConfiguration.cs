@@ -10,25 +10,14 @@ namespace Infrastructure.Data.Configurations
         {
             builder.HasKey(u => u.Id);
 
-            builder.HasMany(u => u.GivenReviews)
-                .WithOne()
-                .HasForeignKey(r => r.ReviewerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasMany(u => u.ReceivedReviews)
-                .WithOne()
-                .HasForeignKey(r => r.RevieweeId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasMany(u => u.SentMessages)
-                .WithOne()
-                .HasForeignKey(m => m.SenderId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasMany(u => u.ReceivedMessages)
-                .WithOne()
-                .HasForeignKey(m => m.ReceiverId)
-                .OnDelete(DeleteBehavior.Restrict);
+            // GivenReviews, ReceivedReviews, SentMessages and ReceivedMessages used to be
+            // configured here with `.WithOne()` — no navigation on the far side, because
+            // Review and Message were placeholders that had none.
+            //
+            // They do now, and ReviewConfiguration/MessageConfiguration declare both ends.
+            // Leaving these in place made EF treat each pair as *two* relationships and
+            // invent shadow foreign keys (SenderId1, RevieweeId1, …) beside the real ones.
+            // A relationship belongs to the dependent's configuration, and is declared once.
 
             builder.HasOne(u => u.Verification)
                 .WithOne(v => v.User)
