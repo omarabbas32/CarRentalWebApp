@@ -6,11 +6,10 @@
  * that the other side's handler fires. Everything else about messaging can be
  * verified with a stub — this cannot.
  *
- * It writes to the database: it registers two throwaway users and creates a
- * booking between them.
+ * It writes to the database: it registers a throwaway owner and renter, lists
+ * a car, and books it.
  *
- * Skips itself if the API is unreachable, or if no owner credentials are
- * configured — see the note on VERIFY_OWNER_* below.
+ * Skips itself if the API is unreachable.
  *
  * Run: npm run verify:realtime
  */
@@ -35,22 +34,15 @@ if (!reachable) {
 }
 
 /**
- * A booking needs a car, and a car needs an owner we can authenticate as —
- * `POST /api/cars` is owner-only. Rather than seeding one (DbSeeder is
- * deliberately no-op unless configured), take credentials from the
- * environment and skip when they are absent, the same posture this suite
- * takes when the API is down.
+ * Everything is provisioned here rather than taken from the environment: a
+ * booking needs a car, a car needs an owner, and `role` accepts Owner on
+ * self-registration. Depending on a pre-existing account would make the suite
+ * unrunnable on a fresh database, which is exactly when it is most useful.
+ *
+ * Note the budget: `/api/auth/*` shares one 5-request-per-minute window, and
+ * two registrations spend two of it.
  */
-const OWNER_EMAIL = process.env.VERIFY_OWNER_EMAIL;
-const OWNER_PASSWORD = process.env.VERIFY_OWNER_PASSWORD;
-
-if (!OWNER_EMAIL || !OWNER_PASSWORD) {
-  console.log(
-    "\nVERIFY_OWNER_EMAIL / VERIFY_OWNER_PASSWORD not set — skipping realtime checks." +
-      "\nSet them to an Owner account to exercise the hub.\n",
-  );
-  process.exit(0);
-}
+const TEST_PASSWORD = "Aa1!aaaa";
 
 const signalR = await import("@microsoft/signalr");
 const { registerTokenProvider } = await import("@/lib/api/client");
@@ -58,7 +50,7 @@ const authApi = await import("@/lib/api/auth");
 const carsApi = await import("@/lib/api/cars");
 const bookingsApi = await import("@/lib/api/bookings");
 const messagesApi = await import("@/lib/api/messages");
-const { UserRole } = await import("@/lib/enums");
+const { UserRole, TransmissionType, FuelType, CarCategory } = await import("@/lib/enums");
 
 let passed = 0;
 async function check(name: string, fn: () => Promise<void>) {
@@ -82,32 +74,61 @@ try {
 
   // --- two identities ------------------------------------------------------
 
-  const owner = await authApi.login(OWNER_EMAIL, OWNER_PASSWORD);
-  assert.equal(
-    owner.role,
-    "Owner",
-    "VERIFY_OWNER_EMAIL must be an Owner account — /api/cars is owner-only",
-  );
+  const owner = await authApi.register({
+    email: `realtime.owner.${stamp}@example.com`,
+    password: TEST_PASSWORD,
+    firstName: "Realtime",
+    lastName: "Owner",
+    role: UserRole.Owner,
+  });
 
   const renter = await authApi.register({
     email: `realtime.renter.${stamp}@example.com`,
-    password: "Aa1!aaaa",
+    password: TEST_PASSWORD,
     firstName: "Realtime",
     lastName: "Renter",
     role: UserRole.Renter,
   });
 
-  // --- a booking to talk about --------------------------------------------
+  // --- a car, and a booking to talk about ----------------------------------
 
   token = owner.token;
-  const cars = await carsApi.getCars();
-  const car = cars.find((c) => c.ownerId === owner.userId);
-  assert.ok(car, "the owner account needs at least one car listed");
+  const carId = await carsApi.createCar({
+    make: "Toyota",
+    model: "Corolla",
+    year: 2022,
+    color: "Silver",
+    licensePlate: `RT${String(stamp).slice(-6)}`,
+    // 17 chars, no I/O/Q — the validator's character class.
+    vin: `RT${String(stamp).slice(-6)}HZKLMNPRS`.slice(0, 17),
+    transmission: TransmissionType.Automatic,
+    fuelType: FuelType.Petrol,
+    seats: 5,
+    doors: 4,
+    mileage: 42_000,
+    category: CarCategory.Standard,
+    hasGPS: true,
+    hasBluetooth: true,
+    hasUSBCharging: true,
+    hasChildSeat: false,
+    hasAirConditioning: true,
+    hasBackupCamera: false,
+    location: { lat: 33.8938, lng: 35.5018 },
+    locationAddress: "1 Test Street",
+    locationCity: "Beirut",
+    locationState: "Beirut",
+    pricePerDay: 45,
+    pricePerWeek: 270,
+    pricePerMonth: 1000,
+    securityDeposit: 200,
+    dailyMileageLimit: 200,
+    extraMileageCharge: 0.25,
+  });
 
   token = renter.token;
   const start = new Date(Date.now() + 86_400_000 * 30);
   const end = new Date(Date.now() + 86_400_000 * 32);
-  const bookingId = await bookingsApi.createBooking(car.id, start, end);
+  const bookingId = await bookingsApi.createBooking(carId, start, end);
 
   // --- connect both sides --------------------------------------------------
 

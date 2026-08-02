@@ -21,6 +21,9 @@ import type { MessageDto, NotificationDto } from "@/types/api";
 
 export type RealtimeStatus = "idle" | "connecting" | "connected" | "disconnected";
 
+/** Backoff between reconnect attempts. Exhausting it stops the attempts. */
+const RECONNECT_DELAYS_MS = [0, 2000, 10_000, 30_000];
+
 type NotificationHandler = (notification: NotificationDto) => void;
 type MessageHandler = (message: MessageDto) => void;
 type ReconnectHandler = () => void;
@@ -73,6 +76,16 @@ export function start(): Promise<void> {
   if (connection?.state === HubConnectionState.Connected) return Promise.resolve();
   if (startInFlight) return startInFlight;
 
+  // Without a token the negotiate request goes out as `Authorization: Bearer `
+  // and the hub answers 401 — "Failed to complete negotiation with the
+  // server". Connecting anyway would turn an ordinary signed-out state, or a
+  // session that lapsed while the tab was closed, into a console error. The
+  // provider re-runs `start()` when a session appears.
+  if (!currentAuthToken()) {
+    setStatus("idle");
+    return Promise.resolve();
+  }
+
   const hub = new HubConnectionBuilder()
     .withUrl(apiUrl("/hubs/notifications"), {
       // Called on every connect *and* every reconnect, so a token rotated by
@@ -83,7 +96,17 @@ export function start(): Promise<void> {
     })
     // Backoff for dropped connections. Note this does *not* cover the initial
     // connect — that failure is handled below.
-    .withAutomaticReconnect([0, 2000, 10_000, 30_000])
+    //
+    // A policy rather than a delay array so it can give up when the session
+    // has gone: reconnecting without a token just repeats the 401 four times
+    // and logs a negotiation failure for each. Signing in starts a fresh
+    // connection through the provider.
+    .withAutomaticReconnect({
+      nextRetryDelayInMilliseconds: (context) => {
+        if (!currentAuthToken()) return null;
+        return RECONNECT_DELAYS_MS[context.previousRetryCount] ?? null;
+      },
+    })
     .configureLogging(LogLevel.Warning)
     .build();
 
