@@ -2,6 +2,7 @@ using MediatR;
 using Application.Common.Interfaces;
 using Application.Common.Exceptions;
 using Domain.Booking;
+using Domain.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Bookings.Commands.EndTrip;
@@ -9,10 +10,12 @@ namespace Application.Bookings.Commands.EndTrip;
 public class EndTripCommandHandler : IRequestHandler<EndTripCommand, Unit>
 {
     private readonly IAppDbContext _context;
+    private readonly INotificationService _notifications;
 
-    public EndTripCommandHandler(IAppDbContext context)
+    public EndTripCommandHandler(IAppDbContext context, INotificationService notifications)
     {
         _context = context;
+        _notifications = notifications;
     }
 
     public async Task<Unit> Handle(EndTripCommand request, CancellationToken cancellationToken)
@@ -58,7 +61,20 @@ public class EndTripCommandHandler : IRequestHandler<EndTripCommand, Unit>
             }
         }
 
+        // The moment a trip is actually finished, which is what this counter means.
+        booking.Car.TotalTrips += 1;
+
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Ending the trip is also what opens the review window, so this is the renter's
+        // cue to leave one.
+        await _notifications.NotifyAsync(
+            booking.RenterId,
+            NotificationType.TripEnded,
+            "Trip completed",
+            $"Your trip in the {booking.Car.Make} {booking.Car.Model} is finished. You can leave a review.",
+            booking.Id,
+            cancellationToken);
 
         return Unit.Value;
     }

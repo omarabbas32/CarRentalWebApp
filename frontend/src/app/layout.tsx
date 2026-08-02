@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { RealtimeProvider } from "@/components/providers/realtime-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -28,7 +29,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <TooltipProvider>{children}</TooltipProvider>
+            {/* Inside AuthProvider: the hub needs a session before it has
+                anything to connect with. */}
+            <RealtimeProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </RealtimeProvider>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

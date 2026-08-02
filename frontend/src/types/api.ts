@@ -15,6 +15,8 @@ import type {
   FuelType,
   GovernmentIdType,
   InspectionType,
+  NotificationType,
+  ReviewType,
   TransmissionType,
   UserRole,
   UserStatus,
@@ -278,4 +280,117 @@ export type PendingVerificationDto = {
   driverLicenseBackImageUrl: string | null;
   driverLicenseStatus: VerificationStatus;
   driverLicenseExpiryDate: string | null;
+};
+
+/**
+ * `Application.Messages.Common.MessageDto`.
+ *
+ * Only the sender's first name — a thread has two people who already know each
+ * other, and a surname is more than the view needs.
+ */
+export type MessageDto = {
+  id: string;
+  bookingId: string;
+  senderId: string;
+  senderFirstName: string;
+  receiverId: string;
+  content: string;
+  sentAt: string;
+  readAt: string | null;
+};
+
+/**
+ * `Application.Messages.Queries.GetBookingMessages.GetBookingMessagesResult`.
+ *
+ * **Newest first.** The server pages backwards through history, so page 1 is
+ * the bottom of the conversation. Reverse before rendering.
+ */
+export type GetBookingMessagesResult = {
+  messages: MessageDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+/** `Application.Messages.Common.ThreadSummaryDto`. */
+export type ThreadSummaryDto = {
+  bookingId: string;
+  carId: string;
+  carMake: string;
+  carModel: string;
+  carYear: number;
+  bookingStatus: BookingStatus;
+  counterpartyId: string;
+  counterpartyFirstName: string;
+  counterpartyLastName: string;
+  lastMessagePreview: string;
+  lastMessageAt: string;
+  unreadCount: number;
+};
+
+/** `Application.Messages.Queries.GetThreads.GetThreadsResult`. */
+export type GetThreadsResult = {
+  threads: ThreadSummaryDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+/** `Application.Reviews.Common.ReviewDto`. */
+export type ReviewDto = {
+  id: string;
+  bookingId: string;
+  carId: string;
+  reviewerId: string;
+  reviewerFirstName: string;
+  reviewerLastName: string;
+  revieweeId: string;
+  type: ReviewType;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+};
+
+/** `Application.Reviews.Queries.GetCarReviews.GetCarReviewsResult`. */
+export type GetCarReviewsResult = {
+  reviews: ReviewDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+/** `Application.Reviews.Queries.GetUserReviews.GetUserReviewsResult`. */
+export type GetUserReviewsResult = GetCarReviewsResult;
+
+/**
+ * `Application.Notifications.Common.NotificationDto`.
+ *
+ * `relatedEntityId` means nothing on its own — read it according to `type`.
+ * `lib/notifications.ts` owns that mapping.
+ */
+export type NotificationDto = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  relatedEntityId: string | null;
+  readAt: string | null;
+  createdAt: string;
+};
+
+/** `Application.Notifications.Queries.GetNotifications.GetNotificationsResult`. */
+export type GetNotificationsResult = {
+  notifications: NotificationDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+/** `Application.Notifications.Common.UnreadCountResult`. Shared by messages. */
+export type UnreadCountResult = {
+  count: number;
 };

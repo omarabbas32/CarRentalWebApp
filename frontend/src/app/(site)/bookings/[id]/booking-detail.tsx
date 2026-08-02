@@ -4,7 +4,9 @@ import Link from "next/link";
 import { BookingStatusBadge } from "@/components/bookings/booking-status-badge";
 import { BookingTimeline } from "@/components/bookings/booking-timeline";
 import { CancelBookingDialog } from "@/components/bookings/cancel-dialog";
+import { BookingReviews } from "@/components/reviews/booking-reviews";
 import { ErrorState } from "@/components/error-state";
+import { MessageThread } from "@/components/messages/message-thread";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -129,6 +131,16 @@ export function BookingDetail({ bookingId }: { bookingId: string }) {
           </section>
         </>
       )}
+
+      <Separator />
+
+      <BookingReviews booking={booking} />
+
+      <Separator />
+
+      {/* The booking is the thread. There is no other way to reach this
+          conversation, because a thread belongs to a booking. */}
+      <MessageThread booking={booking} />
 
       {canCancel && (
         <>

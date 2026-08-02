@@ -21,11 +21,14 @@ namespace Infrastructure.Data
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<TripInspection> TripInspections { get; set; }
         public DbSet<InspectionPhoto> InspectionPhotos { get; set; }
+        public DbSet<Message> Messages { get; set; }
+        public DbSet<Review> Reviews { get; set; }
 
         // User Domain
         public DbSet<User> Users { get; set; }
         public DbSet<UserVerification> UserVerifications { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

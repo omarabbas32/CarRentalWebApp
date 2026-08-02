@@ -11,11 +11,16 @@ public class CancelBookingCommandHandler : IRequestHandler<CancelBookingCommand,
 {
     private readonly IAppDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationService _notifications;
 
-    public CancelBookingCommandHandler(IAppDbContext context, ICurrentUserService currentUserService)
+    public CancelBookingCommandHandler(
+        IAppDbContext context,
+        ICurrentUserService currentUserService,
+        INotificationService notifications)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _notifications = notifications;
     }
 
     public async Task<Unit> Handle(CancelBookingCommand request, CancellationToken cancellationToken)
@@ -50,6 +55,27 @@ public class CancelBookingCommandHandler : IRequestHandler<CancelBookingCommand,
         booking.CancellationReason = request.CancellationReason;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Tell whichever party did not do the cancelling. When an admin cancels, both
+        // sides are strangers to the action and both are told.
+        var recipients = cancelledByUserId == booking.RenterId
+            ? new[] { booking.OwnerId }
+            : cancelledByUserId == booking.OwnerId
+                ? new[] { booking.RenterId }
+                : new[] { booking.RenterId, booking.OwnerId };
+
+        foreach (var recipient in recipients)
+        {
+            await _notifications.NotifyAsync(
+                recipient,
+                NotificationType.BookingCancelled,
+                "Booking cancelled",
+                string.IsNullOrWhiteSpace(request.CancellationReason)
+                    ? "A booking you were part of has been cancelled."
+                    : $"Reason given: {request.CancellationReason}",
+                booking.Id,
+                cancellationToken);
+        }
 
         return Unit.Value;
     }
