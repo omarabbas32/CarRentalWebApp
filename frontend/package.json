@@ -13,7 +13,8 @@
     "verify:contrast": "tsx scripts/verify-contrast.ts",
     "verify": "npm run verify:logic && npm run verify:client && npm run verify:contrast",
     "verify:live": "tsx scripts/verify-live.mts",
-    "verify:realtime": "tsx scripts/verify-realtime.mts"
+    "verify:realtime": "tsx scripts/verify-realtime.mts",
+    "seed:scenario": "tsx scripts/seed-scenario.mts"
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",
